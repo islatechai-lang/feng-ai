@@ -10,12 +10,17 @@ export interface UnoRouterConfig {
 }
 
 export function getUnoRouterConfig(): UnoRouterConfig {
+  let baseUrl =
+    process.env.UNOROUTER_BASE_URL ||
+    process.env.OPENROUTER_BASE_URL ||
+    "https://api.unorouter.com/v1";
+
+  // Sanitize: strip trailing /chat/completions or trailing slashes if user pasted full endpoint
+  baseUrl = baseUrl.replace(/\/chat\/completions\/?$/, "").replace(/\/+$/, "");
+
   return {
     apiKey: process.env.UNOROUTER_API_KEY || process.env.OPENROUTER_API_KEY,
-    baseUrl:
-      process.env.UNOROUTER_BASE_URL ||
-      process.env.OPENROUTER_BASE_URL ||
-      "https://openrouter.ai/api/v1",
+    baseUrl,
     reasoningModel: process.env.REASONING_MODEL || "qwen3.6-35b-a3b:free",
     visionModel: process.env.VISION_MODEL || "qwen3.6-35b-a3b:free",
     imageModel: process.env.IMAGE_MODEL || "gpt-image-2.5-sunburst",
