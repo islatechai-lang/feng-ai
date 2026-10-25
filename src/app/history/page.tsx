@@ -26,7 +26,7 @@ export default function HistoryPage() {
   };
 
   return (
-    <div className="min-h-screen flex flex-col bg-[#020e0c] text-slate-100 pb-28 selection:bg-emerald-500 selection:text-slate-950">
+    <div className="min-h-screen flex flex-col bg-[#020e0c] text-slate-100 pb-36 selection:bg-emerald-500 selection:text-slate-950">
       <TopHeader />
 
       <main className="flex-1 max-w-md w-full mx-auto px-4 pt-4 space-y-5">

@@ -16,9 +16,9 @@ export function BottomNav() {
   ];
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 pointer-events-none safe-bottom">
+    <nav className="fixed bottom-0 left-0 right-0 z-30 pointer-events-none safe-bottom">
       <div className="max-w-md mx-auto px-4 pb-3 pt-1 pointer-events-auto">
-        <div className="glass-panel-elevated rounded-3xl px-2 py-2 flex items-center justify-around shadow-2xl relative">
+        <div className="glass-panel-elevated rounded-3xl px-2 py-2 flex items-center justify-around shadow-2xl relative border border-emerald-500/25">
           {tabs.map((tab) => {
             const Icon = tab.icon;
             const isActive =
