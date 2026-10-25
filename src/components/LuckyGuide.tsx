@@ -29,104 +29,102 @@ export function LuckyGuide({
   const PrimaryIcon = elementIcons[primaryElement] || Sparkles;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-4">
       {/* 1. Kua Number & Personal Energy (if available) */}
       {kuaInfo && (
-        <div className="p-6 rounded-3xl bg-gradient-to-br from-emerald-950/40 via-slate-900/60 to-slate-950 border border-emerald-600/40 shadow-xl space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-serif font-black text-2xl shadow-inner">
-                {kuaInfo.kuaNumber}
-              </div>
-              <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base font-bold text-white">
-                    Personal Kua Number {kuaInfo.kuaNumber} ({kuaInfo.trigram})
-                  </h3>
-                  <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-900/60 text-emerald-300 border border-emerald-700">
-                    {kuaInfo.group} Group
-                  </span>
-                </div>
-                <p className="text-xs text-slate-400 mt-0.5">
-                  Governing Element: <strong className="capitalize text-emerald-300">{kuaInfo.element}</strong> • Based on your birth year.
-                </p>
-              </div>
+        <div className="p-4 rounded-3xl glass-panel-elevated border border-emerald-500/25 shadow-xl space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 font-serif font-black text-xl shadow-inner">
+              {kuaInfo.kuaNumber}
             </div>
-
-            <div className="text-xs text-slate-400 max-w-xs text-left sm:text-right">
-              Sleep with your crown or sit facing your personal Sheng Chi direction to maximize vitality.
+            <div>
+              <div className="flex items-center gap-1.5">
+                <h3 className="text-xs font-bold text-white">
+                  Personal Kua {kuaInfo.kuaNumber} ({kuaInfo.trigram})
+                </h3>
+                <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700">
+                  {kuaInfo.group}
+                </span>
+              </div>
+              <p className="text-[10px] text-slate-400">
+                Element: <strong className="capitalize text-emerald-300">{kuaInfo.element}</strong> • Based on birth year
+              </p>
             </div>
           </div>
 
+          <p className="text-[11px] text-emerald-200/90 leading-tight p-2.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/20">
+            💡 <strong>Actionable Rule:</strong> Sleep with the crown of your head facing <strong>{kuaInfo.luckyDirections.tianYi} (Tian Yi)</strong> for healing sleep, or face <strong>{kuaInfo.luckyDirections.shengChi} (Sheng Chi)</strong> at your desk for career authority.
+          </p>
+
           {/* 4 Lucky Directions Breakdown */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2">
-            <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-amber-400">
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <div className="p-2.5 rounded-2xl glass-pill">
+              <div className="text-[9px] font-bold uppercase tracking-wider text-amber-400">
                 Sheng Chi (Wealth)
               </div>
-              <div className="text-lg font-black text-white mt-0.5 font-mono">
+              <div className="text-base font-black text-white font-mono">
                 {kuaInfo.luckyDirections.shengChi}
               </div>
-              <div className="text-[10px] text-slate-400">Vitality, money & growth</div>
+              <div className="text-[9px] text-slate-400">Vitality & money growth</div>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-teal-400">
+            <div className="p-2.5 rounded-2xl glass-pill">
+              <div className="text-[9px] font-bold uppercase tracking-wider text-teal-400">
                 Tian Yi (Health)
               </div>
-              <div className="text-lg font-black text-white mt-0.5 font-mono">
+              <div className="text-base font-black text-white font-mono">
                 {kuaInfo.luckyDirections.tianYi}
               </div>
-              <div className="text-[10px] text-slate-400">Healing & well-being</div>
+              <div className="text-[9px] text-slate-400">Healing & calm sleep</div>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-rose-400">
+            <div className="p-2.5 rounded-2xl glass-pill">
+              <div className="text-[9px] font-bold uppercase tracking-wider text-rose-400">
                 Yan Nian (Love)
               </div>
-              <div className="text-lg font-black text-white mt-0.5 font-mono">
+              <div className="text-base font-black text-white font-mono">
                 {kuaInfo.luckyDirections.yanNian}
               </div>
-              <div className="text-[10px] text-slate-400">Romance & harmony</div>
+              <div className="text-[9px] text-slate-400">Romance & harmony</div>
             </div>
 
-            <div className="p-3 rounded-2xl bg-slate-950/80 border border-slate-800">
-              <div className="text-[10px] font-bold uppercase tracking-wider text-indigo-400">
+            <div className="p-2.5 rounded-2xl glass-pill">
+              <div className="text-[9px] font-bold uppercase tracking-wider text-indigo-400">
                 Fu Wei (Peace)
               </div>
-              <div className="text-lg font-black text-white mt-0.5 font-mono">
+              <div className="text-base font-black text-white font-mono">
                 {kuaInfo.luckyDirections.fuWei}
               </div>
-              <div className="text-[10px] text-slate-400">Stability & clarity</div>
+              <div className="text-[9px] text-slate-400">Clarity & mental stillness</div>
             </div>
           </div>
         </div>
       )}
 
       {/* 2. Elements & Lucky Colors */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+      <div className="space-y-3">
         {/* Primary Element Card */}
-        <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-emerald-400">
-            <PrimaryIcon className="w-4 h-4" />
+        <div className="p-4 rounded-3xl glass-panel border border-emerald-500/15 space-y-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+            <PrimaryIcon className="w-3.5 h-3.5" />
             <span>Harmonizing Element</span>
           </div>
 
-          <h4 className="text-xl font-black text-white capitalize">
-            {primaryElement} Element Energy
+          <h4 className="text-sm font-black text-white capitalize">
+            {primaryElement} Element Sanctuary
           </h4>
 
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Your space and goal benefit most from active {primaryElement} cultivation. Incorporate natural organic textures, rounded organic lines, and living elements to maintain Sheng Chi momentum.
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Your space and goal benefit most from active {primaryElement} cultivation. Incorporate organic textures, rounded organic lines, and natural living elements to circulate vibrant Sheng Chi.
           </p>
 
-          <div className="flex items-center gap-2 pt-2">
-            <span className="text-xs font-semibold text-slate-300">Auspicious Sectors:</span>
-            <div className="flex gap-1.5">
+          <div className="flex items-center gap-2 pt-1 text-xs">
+            <span className="text-[11px] font-semibold text-slate-300">Auspicious Sectors:</span>
+            <div className="flex gap-1">
               {luckyDirections.map((dir) => (
                 <span
                   key={dir}
-                  className="px-2 py-0.5 rounded-lg text-xs font-mono font-bold bg-slate-800 text-emerald-300 border border-slate-700"
+                  className="px-2 py-0.2 rounded-lg text-[10px] font-mono font-bold bg-slate-900 text-emerald-300 border border-emerald-500/30"
                 >
                   {dir}
                 </span>
@@ -136,27 +134,23 @@ export function LuckyGuide({
         </div>
 
         {/* Lucky Colors Palette */}
-        <div className="p-6 rounded-3xl bg-slate-900/60 border border-slate-800 space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-teal-400">
-            <Palette className="w-4 h-4" />
-            <span>Recommended Palette</span>
+        <div className="p-4 rounded-3xl glass-panel border border-emerald-500/15 space-y-2">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-400">
+            <Palette className="w-3.5 h-3.5" />
+            <span>Recommended Accent Palette</span>
           </div>
 
-          <h4 className="text-xl font-black text-white">
-            Auspicious Accent Colors
-          </h4>
-
-          <p className="text-xs text-slate-400 leading-relaxed">
-            Use these shades in throw blankets, artwork, curtains, or small ceramics to stimulate Chi without overwhelming the room.
+          <p className="text-xs text-slate-300 leading-relaxed">
+            Incorporate these tones in throw pillows, ceramics, curtains, and lighting shades:
           </p>
 
-          <div className="flex flex-wrap gap-2 pt-1">
+          <div className="flex flex-wrap gap-1.5 pt-0.5">
             {luckyColors.map((color) => (
               <div
                 key={color}
-                className="px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-700 flex items-center gap-2 text-xs font-medium text-slate-200"
+                className="px-2.5 py-1 rounded-xl glass-pill flex items-center gap-1.5 text-[11px] font-medium text-slate-200"
               >
-                <span className="w-3 h-3 rounded-full bg-emerald-500 shadow-sm" />
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm" />
                 <span>{color}</span>
               </div>
             ))}
@@ -165,23 +159,23 @@ export function LuckyGuide({
       </div>
 
       {/* 3. Decor / Shopping Suggestions */}
-      <div className="space-y-4">
+      <div className="space-y-2.5 pt-1">
         <div className="flex items-center justify-between">
-          <h4 className="text-base font-bold text-white flex items-center gap-2">
-            <ShoppingBag className="w-4 h-4 text-emerald-400" />
-            <span>Feng Shui Decor & Placement Enhancers</span>
+          <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
+            <ShoppingBag className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Auspicious Decor Enhancers</span>
           </h4>
-          <span className="text-xs text-slate-400">Generic items • No affiliates</span>
+          <span className="text-[10px] text-slate-500">Generic items • No affiliates</span>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+        <div className="space-y-2">
           {decorSuggestions.map((item, index) => (
             <div
               key={index}
-              className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 space-y-2 hover:border-slate-700 transition"
+              className="p-3.5 rounded-2xl glass-panel border border-emerald-500/15 space-y-1.5"
             >
               <div className="flex items-center justify-between">
-                <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase tracking-wider bg-slate-800 text-slate-300 capitalize">
+                <span className="px-2 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-900 text-slate-300 capitalize border border-slate-700">
                   {item.element} element
                 </span>
                 <span className="text-[10px] text-emerald-400 font-medium">
@@ -197,7 +191,7 @@ export function LuckyGuide({
                 {item.purpose}
               </p>
 
-              <div className="text-[10px] text-teal-300 font-medium pt-1 border-t border-slate-800">
+              <div className="text-[10px] text-teal-300 font-medium pt-0.5 border-t border-emerald-500/10">
                 <strong>Placement:</strong> {item.placement}
               </div>
             </div>

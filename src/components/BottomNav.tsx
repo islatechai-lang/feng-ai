@@ -12,7 +12,7 @@ export function BottomNav() {
     { href: "/compass", label: "Compass", icon: Compass },
     { href: "/history", label: "Saved", icon: History },
     { href: "/guides", label: "Guides", icon: BookOpen },
-    { href: "/account", label: "Pro", icon: Crown },
+    { href: "/account", label: "Upgrade", icon: Crown },
   ];
 
   return (

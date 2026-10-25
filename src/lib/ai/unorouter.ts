@@ -21,14 +21,14 @@ export function getUnoRouterConfig(): UnoRouterConfig {
   return {
     apiKey: process.env.UNOROUTER_API_KEY || process.env.OPENROUTER_API_KEY,
     baseUrl,
-    reasoningModel: process.env.REASONING_MODEL || "qwen3.6-35b-a3b:free",
-    visionModel: process.env.VISION_MODEL || "qwen3.6-35b-a3b:free",
-    imageModel: process.env.IMAGE_MODEL || "gpt-image-2.5-sunburst",
+    reasoningModel: process.env.REASONING_MODEL || "gemini-3.1-flash-lite",
+    visionModel: process.env.VISION_MODEL || "gemini-3.1-flash-lite",
+    imageModel: process.env.IMAGE_MODEL || "gemini-3.1-flash-lite-image",
   };
 }
 
 /**
- * Calls UnoRouter / OpenRouter chat completion with timeout & retry
+ * Calls UnoRouter / OpenRouter chat completion with timeout, retry & model fallback
  */
 export async function callChatCompletion(
   messages: Array<{ role: string; content: any }>,
@@ -43,63 +43,79 @@ export async function callChatCompletion(
     throw new Error("UNOROUTER_API_KEY_MISSING");
   }
 
+  // Model candidate aliases if provider expects a specific prefix
+  const modelCandidates = [
+    model,
+    model.includes("/") ? model.split("/").pop()! : `google/${model}`,
+    "gemini-3.1-flash-lite",
+    "google/gemini-2.5-flash",
+  ];
+
   let attempt = 0;
   let lastError: Error | null = null;
 
-  while (attempt <= maxRetries) {
-    attempt++;
-    const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), timeoutMs);
+  for (const candidateModel of modelCandidates) {
+    while (attempt <= maxRetries) {
+      attempt++;
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), timeoutMs);
 
-    try {
-      const body: any = {
-        model,
-        messages,
-      };
+      try {
+        const body: any = {
+          model: candidateModel,
+          messages,
+        };
 
-      if (options.responseFormatJson) {
-        body.response_format = { type: "json_object" };
-      }
+        if (options.responseFormatJson) {
+          body.response_format = { type: "json_object" };
+        }
 
-      const res = await fetch(`${config.baseUrl}/chat/completions`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${config.apiKey}`,
-          "HTTP-Referer": "https://fengshui-ai.app",
-          "X-Title": "FengShui Room Analyzer",
-        },
-        body: JSON.stringify(body),
-        signal: controller.signal,
-      });
+        const res = await fetch(`${config.baseUrl}/chat/completions`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${config.apiKey}`,
+            "HTTP-Referer": "https://fengshui-ai.app",
+            "X-Title": "FengShui Room Analyzer",
+          },
+          body: JSON.stringify(body),
+          signal: controller.signal,
+        });
 
-      clearTimeout(timer);
+        clearTimeout(timer);
 
-      if (!res.ok) {
-        const errText = await res.text();
-        const status = res.status;
-        // Rate limit or server error: retry
-        if ((status === 429 || status >= 500) && attempt <= maxRetries) {
-          const delay = Math.pow(2, attempt) * 1000;
-          await new Promise((resolve) => setTimeout(resolve, delay));
+        if (!res.ok) {
+          const errText = await res.text();
+          const status = res.status;
+
+          // If model not recognized, try next candidate
+          if (status === 404 || errText.includes("model_not_found")) {
+            break; // break retry loop to try next model candidate
+          }
+
+          // Rate limit or server error: retry with backoff
+          if ((status === 429 || status >= 500) && attempt <= maxRetries) {
+            const delay = Math.pow(2, attempt) * 1000;
+            await new Promise((resolve) => setTimeout(resolve, delay));
+            continue;
+          }
+          throw new Error(`UnoRouter request failed with ${status}: ${errText}`);
+        }
+
+        const data = await res.json();
+        const content = data.choices?.[0]?.message?.content || "";
+        const tokensIn = data.usage?.prompt_tokens;
+        const tokensOut = data.usage?.completion_tokens;
+
+        return { content, tokensIn, tokensOut };
+      } catch (err: any) {
+        clearTimeout(timer);
+        lastError = err;
+        if (err.name === "AbortError" && attempt <= maxRetries) {
           continue;
         }
-        throw new Error(`UnoRouter request failed with ${status}: ${errText}`);
+        if (attempt > maxRetries) break;
       }
-
-      const data = await res.json();
-      const content = data.choices?.[0]?.message?.content || "";
-      const tokensIn = data.usage?.prompt_tokens;
-      const tokensOut = data.usage?.completion_tokens;
-
-      return { content, tokensIn, tokensOut };
-    } catch (err: any) {
-      clearTimeout(timer);
-      lastError = err;
-      if (err.name === "AbortError" && attempt <= maxRetries) {
-        continue;
-      }
-      if (attempt > maxRetries) break;
     }
   }
 
@@ -120,24 +136,26 @@ export async function parseRoomVision(
     return fallbackVisionParsing(roomContext);
   }
 
-  const prompt = `You are an expert Feng Shui architect and interior spatial analyst. Analyze this room photo thoroughly.
-Context provided by user:
+  const prompt = `You are a master Classical Feng Shui architect and interior spatial analyst.
+Analyze this room photograph with high spatial precision.
+Context provided:
 - Room Type: ${roomContext.roomType}
 - Main Door Direction: ${roomContext.doorDirection}
-- Goal: ${roomContext.goal}
+- User Focus Intention: ${roomContext.goal}
 
-Detect all primary furniture pieces, their approximate locations, orientations, whether they face the door or windows, clutter score (1-10), lighting quality, and dominant colors.
-Respond ONLY with a valid JSON object matching this schema:
+Detect all furniture pieces, their exact position relative to walls/doors/windows, whether the bed/desk faces the door or has back to door (Command Position violation), whether mirrors face the sleeping area, clutter level (1-10), lighting quality, and dominant colors.
+
+Respond with ONLY a raw valid JSON object (no markdown quotes, no prose) matching this exact schema:
 {
   "roomType": "${roomContext.roomType}",
-  "clutterLevel": number (1-10),
-  "lightingQuality": "poor" | "moderate" | "bright" | "harsh",
-  "dominantColors": string[],
+  "clutterLevel": 6,
+  "lightingQuality": "moderate",
+  "dominantColors": ["Warm Oak", "Linen White", "Grey"],
   "detectedObjects": [
     { "id": "bed", "label": "Bed", "position": "North wall, in line with door", "facesWhat": "Door directly" },
     { "id": "mirror", "label": "Full length mirror", "position": "East wall", "facesWhat": "Bed" }
   ],
-  "notes": "Brief spatial layout summary"
+  "notes": "Spatial layout summary"
 }`;
 
   try {
@@ -155,7 +173,7 @@ Respond ONLY with a valid JSON object matching this schema:
         },
       ],
       config.visionModel,
-      { responseFormatJson: true, timeoutMs: 30000 }
+      { responseFormatJson: true, timeoutMs: 35000 }
     );
 
     // Parse and validate with Zod
@@ -164,14 +182,14 @@ Respond ONLY with a valid JSON object matching this schema:
     const validated = VisionAnalysisResponseSchema.parse(parsed);
     return validated as RoomVisionData;
   } catch (error) {
-    console.warn("Vision parsing fallback triggered:", error);
+    console.warn("Live vision parsing fallback triggered:", error);
     return fallbackVisionParsing(roomContext);
   }
 }
 
 /**
- * Generates an edited room image using gpt-image-2.5-sunburst
- * Falls back gracefully to the original photo or enhanced visual if API unavailable
+ * Generates an edited room image using gemini-3.1-flash-lite-image or configured image model
+ * Tries /images/edits and /images/generations with graceful fallback
  */
 export async function generateEditedRoomImage(
   originalImageUrl: string,
@@ -184,8 +202,9 @@ export async function generateEditedRoomImage(
     return "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1200&q=80";
   }
 
+  // Attempt 1: Image Edits / Inpainting endpoint
   try {
-    const response = await fetch(`${config.baseUrl}/images/edits`, {
+    const editRes = await fetch(`${config.baseUrl}/images/edits`, {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -200,16 +219,41 @@ export async function generateEditedRoomImage(
       }),
     });
 
-    if (response.ok) {
-      const data = await response.json();
+    if (editRes.ok) {
+      const data = await editRes.json();
       const generatedUrl = data.data?.[0]?.url;
       if (generatedUrl) return generatedUrl;
     }
   } catch (err) {
-    console.warn("Image edit model call failed, falling back to layout render:", err);
+    console.warn("Endpoint /images/edits not supported or failed:", err);
   }
 
-  // Graceful fallback
+  // Attempt 2: Standard Image Generations endpoint
+  try {
+    const genRes = await fetch(`${config.baseUrl}/images/generations`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${config.apiKey}`,
+      },
+      body: JSON.stringify({
+        model: config.imageModel,
+        prompt: editPrompt,
+        n: 1,
+        size: "1024x1024",
+      }),
+    });
+
+    if (genRes.ok) {
+      const data = await genRes.json();
+      const generatedUrl = data.data?.[0]?.url;
+      if (generatedUrl) return generatedUrl;
+    }
+  } catch (err) {
+    console.warn("Endpoint /images/generations failed:", err);
+  }
+
+  // Graceful fallback to verified aesthetic rearranged room
   return "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1200&q=80";
 }
 

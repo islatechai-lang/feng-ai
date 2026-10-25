@@ -32,19 +32,14 @@ export function TopHeader() {
           </div>
         </Link>
 
-        {/* Daily Chi / Pro Badge */}
+        {/* Upgrade / Free Plan Status Pill */}
         <div className="flex items-center gap-2">
-          <div className="hidden xs:flex items-center gap-1.5 px-2.5 py-1 rounded-full glass-pill text-[10px] font-medium text-emerald-300">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            <span>Sheng Chi Flow</span>
-          </div>
-
           <Link
             href="/account"
-            className="flex items-center gap-1 px-2.5 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-teal-500/20 border border-amber-500/30 text-amber-200 text-xs font-semibold hover:scale-105 active:scale-95 transition-transform"
+            className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-gradient-to-r from-amber-500/20 to-teal-500/20 border border-amber-500/40 text-amber-200 text-xs font-bold hover:scale-105 active:scale-95 transition-transform shadow-sm"
           >
             <Crown className="w-3.5 h-3.5 text-amber-400" />
-            <span>PRO</span>
+            <span>Upgrade</span>
           </Link>
         </div>
       </div>
