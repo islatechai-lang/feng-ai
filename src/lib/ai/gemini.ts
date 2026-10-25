@@ -48,56 +48,41 @@ export async function parseRoomVisionWithGemini(
   const config = getGeminiConfig();
   const { mimeType, data: base64Data } = extractBase64AndMime(imageDataUrl);
 
-  const prompt = `You are a certified Master Classical Feng Shui Architect and Interior Energy Consultant.
-Analyze this room photo thoroughly and objectively.
-User context:
-- Room Type specified: ${context.roomType || "bedroom"}
-- Main Door Direction: ${context.doorDirection || "UNKNOWN"}
-- Feng Shui Life Goal: ${context.goal || "sleep"}
+  const prompt = `You are a certified Master Classical Feng Shui Architect and Spatial Energy Consultant.
+Analyze this room photo thoroughly, accurately, and objectively.
 
-Return ONLY a valid JSON object matching this exact schema:
+CRITICAL INSTRUCTION - REALITY CHECK:
+- Detect ONLY the actual architectural features and furniture that are REAL and VISIBLE in this specific room photo!
+- If there is NO bed in this photo, DO NOT report a bed!
+- If this is a Living Room: detect the sofa, TV, coffee table, media unit, chairs, plants.
+- If this is a Home Office or Study: detect the desk, computer/monitors, office chair, bookshelves.
+- If this is a Dining room or Kitchen: detect the dining table, chairs, counters, appliances.
+- If this is a Bedroom: detect the bed, nightstands, wardrobe, dresser, mirror.
+
+Evaluate the Primary Focal Furniture:
+- Is it in the "Command Position" (can see the doorway diagonally, solid wall behind, not in direct line with the door)?
+- Or is it in an inauspicious position (back to the door, in the direct rushing line of the entrance, blocked by clutter, or under ceiling beams)?
+
+Return ONLY a valid JSON object matching this schema:
 {
-  "roomType": "${context.roomType || "bedroom"}",
-  "clutterLevel": 4, // integer 1 (spotless zen) to 10 (hoarded chaos)
+  "roomType": "bedroom", // "bedroom" | "living_room" | "office" | "kitchen" | "shop"
+  "clutterLevel": 3, // integer 1 (spotless zen) to 10 (cluttered)
   "lightingQuality": "moderate", // "poor" | "moderate" | "bright" | "harsh"
-  "dominantColors": ["warm white", "walnut brown", "beige"],
+  "dominantColors": ["warm white", "natural wood", "grey"],
   "detectedObjects": [
     {
-      "id": "bed_1",
-      "label": "Bed",
-      "position": "Facing door directly (coffin line)",
-      "facesWhat": "Main doorway"
-    },
-    {
-      "id": "desk_1",
-      "label": "Study Desk",
-      "position": "Facing solid wall with back to door",
-      "facesWhat": "Wall"
-    },
-    {
-      "id": "door_1",
-      "label": "Bedroom Entrance Door",
-      "position": "South wall entry"
-    },
-    {
-      "id": "window_1",
-      "label": "Window",
-      "position": "East wall"
-    },
-    {
-      "id": "mirror_1",
-      "label": "Mirror / Closet Mirror",
-      "position": "Reflects bed directly"
+      "id": "item_1",
+      "label": "Sofa / Desk / Bed / Dining Table (actual item name)",
+      "position": "Near door / Facing wall / Diagonal corner / Center",
+      "facesWhat": "Entrance door / Wall / Window"
     }
   ],
-  "notes": "Accurate detailed summary of room layout, chi obstacles, and visible hazards"
+  "notes": "Accurate summary of actual room items, layout flow, and genuine Feng Shui opportunities"
 }
 
-IMPORTANT RULES:
-1. Detect all key objects: bed, desk, door, window, mirror, beams, clutter, electronics, plants, lighting.
-2. Note whether the bed or desk is in the "Command Position" (can see door without being directly in line with door).
-3. Check for Coffin Position (bed feet pointing right at door), mirror reflecting bed, overhead beams, or sharp edges pointing at bed.
-4. Return ONLY valid JSON, no markdown fences, no explanatory text outside the JSON.`;
+RULES:
+1. Return ONLY items actually visible in the photo.
+2. Return ONLY valid JSON, no markdown fences, no explanatory text outside the JSON.`;
 
   const requestBody = {
     contents: [

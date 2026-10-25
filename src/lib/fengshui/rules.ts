@@ -19,6 +19,36 @@ export interface RuleEvaluationContext {
 
 export const CLASSICAL_RULES: FengShuiRuleCheck[] = [
   {
+    id: "sofa_command_position",
+    name: "Living Room Sofa Lacks Command Position",
+    penalty: 20,
+    severity: "critical",
+    check: (ctx) => {
+      const sofa = ctx.detectedObjects.find((o) =>
+        /sofa|couch|sectional|living room seating/i.test(o.label)
+      );
+      if (!sofa) return null;
+
+      const backToDoor = /back to door|floating in middle|facing away from entry|blocks doorway/i.test(
+        sofa.position + " " + (sofa.facesWhat || "")
+      );
+
+      if (backToDoor || (ctx.roomType === "living_room" && /center|middle/i.test(sofa.position))) {
+        return {
+          id: "sofa_command_position",
+          title: "Living Room Sofa Lacks Command Position (Back Exposed to Entry)",
+          severity: "critical",
+          what: "Your primary sofa is floating in the center of the room with its back exposed to the main entryway.",
+          why: "In classical Feng Shui, the primary living room sofa represents your household's 'Mountain' backing — stability, support, and social harmony. Having your back to the door creates subconscious defensiveness and blocks harmonious social Chi.",
+          fix: "Anchor the sofa against a solid interior wall with an expansive diagonal view of the doorway. If floating is required, place a solid console table with warm lamps or heavy ceramic plants behind the sofa.",
+          whichObject: "Sofa",
+          pinCoordinates: { x: 50, y: 65 },
+        };
+      }
+      return null;
+    },
+  },
+  {
     id: "coffin_position",
     name: "The Coffin Position (Door-in-line Bed Alignment)",
     penalty: 25,

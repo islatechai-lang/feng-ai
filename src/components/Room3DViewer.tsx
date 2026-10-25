@@ -14,49 +14,46 @@ import {
   Move,
   CheckCircle2,
   Sliders,
+  Box,
 } from "lucide-react";
-import { RoomType, CompassDirection } from "@/types";
+import { RoomType, Room3DScene, FurnitureItemType } from "@/types";
 
 interface Room3DViewerProps {
   roomType?: RoomType;
-  initialMode?: "before" | "after";
+  sceneData?: Room3DScene;
   onScoreChange?: (score: number) => void;
 }
 
 export function Room3DViewer({
   roomType = "bedroom",
-  initialMode = "after",
+  sceneData,
   onScoreChange,
 }: Room3DViewerProps) {
   const mountRef = useRef<HTMLDivElement>(null);
 
   // States
   const [layoutMode, setLayoutMode] = useState<"before" | "after">("after");
-  const [selectedItem, setSelectedItem] = useState<"bed" | "desk" | "mirror" | "plant">("bed");
-  const [bedPosition, setBedPosition] = useState<"door_line" | "command_diagonal" | "wall_side">("command_diagonal");
-  const [showChiFlow, setShowChiFlow] = useState(true);
   const [cameraView, setCameraView] = useState<"orbit" | "top" | "door">("orbit");
 
-  // Dynamic calculated score based on 3D furniture placement
-  const calculateCurrentScore = (bedPos: string) => {
-    if (bedPos === "command_diagonal") return 94;
-    if (bedPos === "wall_side") return 78;
-    return 54; // door_line (coffin position)
-  };
+  // Determine actual primary focal type
+  const focalType: FurnitureItemType =
+    sceneData?.primaryFocalType || (roomType === "living_room" ? "sofa" : roomType === "office" ? "desk" : "bed");
 
-  const currentScore = calculateCurrentScore(bedPosition);
+  const focalLabel =
+    focalType === "sofa" ? "Living Room Sofa" : focalType === "desk" ? "Work Desk" : "Bed";
+
+  const currentScore = layoutMode === "after" ? 94 : 52;
 
   // Three.js References
   const sceneRef = useRef<THREE.Scene | null>(null);
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
-  const objectsRef = useRef<{
-    bed?: THREE.Group;
-    desk?: THREE.Group;
-    mirror?: THREE.Group;
-    plant?: THREE.Group;
+  const meshesRef = useRef<{
+    focalGroup?: THREE.Group;
+    secondaryGroup?: THREE.Group;
+    plantGroup?: THREE.Group;
     chiParticles?: THREE.Points;
-    shaChiBeam?: THREE.Line;
+    shaBeam?: THREE.Line;
   }>({});
 
   // Touch and Mouse Interaction state
@@ -69,18 +66,15 @@ export function Room3DViewer({
     const container = mountRef.current;
     if (!container) return;
 
-    // Scene
     const scene = new THREE.Scene();
     scene.background = new THREE.Color("#020e0c");
     sceneRef.current = scene;
 
-    // Camera
     const width = container.clientWidth;
     const height = container.clientHeight;
     const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
     cameraRef.current = camera;
 
-    // Renderer
     const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true, powerPreference: "high-performance" });
     renderer.setSize(width, height);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
@@ -97,57 +91,44 @@ export function Room3DViewer({
     const sunLight = new THREE.DirectionalLight(0xffeedd, 1.6);
     sunLight.position.set(6, 10, 5);
     sunLight.castShadow = true;
-    sunLight.shadow.mapSize.width = 1024;
-    sunLight.shadow.mapSize.height = 1024;
     scene.add(sunLight);
 
-    // Warm Bedside Lamp Point Light
-    const warmLamp = new THREE.PointLight(0xffaa44, 2.2, 8);
+    const warmLamp = new THREE.PointLight(0xffaa44, 2.0, 8);
     warmLamp.position.set(-2.5, 2, -2.5);
     scene.add(warmLamp);
 
-    // 1. Build Room Shell (Floor, Walls, Door, Window)
+    // 1. Build Room Architecture (Floor, Walls, Doorway, Window)
     const roomSize = 7;
     const wallHeight = 3.6;
 
-    // Floor
-    const floorGeo = new THREE.PlaneGeometry(roomSize, roomSize);
-    const floorMat = new THREE.MeshStandardMaterial({
-      color: 0x241e17, // Warm dark oak
-      roughness: 0.4,
-      metalness: 0.1,
-    });
-    const floor = new THREE.Mesh(floorGeo, floorMat);
+    // Hardwood Floor
+    const floor = new THREE.Mesh(
+      new THREE.PlaneGeometry(roomSize, roomSize),
+      new THREE.MeshStandardMaterial({ color: 0x241e17, roughness: 0.4 })
+    );
     floor.rotation.x = -Math.PI / 2;
     floor.receiveShadow = true;
     scene.add(floor);
 
-    // Subtle Baseboard / Grid
+    // Grid Floor Overlay
     const grid = new THREE.GridHelper(roomSize, 14, 0x10b981, 0x054637);
     grid.position.y = 0.01;
     scene.add(grid);
 
-    // Back Wall (Far Wall - Z = -roomSize/2)
+    // Far Back Wall (Z = -roomSize/2)
     const wallMat = new THREE.MeshStandardMaterial({ color: 0x132520, roughness: 0.8 });
     const backWall = new THREE.Mesh(new THREE.BoxGeometry(roomSize, wallHeight, 0.2), wallMat);
     backWall.position.set(0, wallHeight / 2, -roomSize / 2);
     backWall.receiveShadow = true;
     scene.add(backWall);
 
-    // Left Wall (X = -roomSize/2)
+    // Left Wall with Window
     const leftWall = new THREE.Mesh(new THREE.BoxGeometry(0.2, wallHeight, roomSize), wallMat);
     leftWall.position.set(-roomSize / 2, wallHeight / 2, 0);
     leftWall.receiveShadow = true;
     scene.add(leftWall);
 
-    // Window on Left Wall (Emits natural daylight)
-    const windowFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(0.25, 1.8, 2.4),
-      new THREE.MeshStandardMaterial({ color: 0x334155 })
-    );
-    windowFrame.position.set(-roomSize / 2 + 0.05, 2.1, 0);
-    scene.add(windowFrame);
-
+    // Window emitting daylight
     const windowGlass = new THREE.Mesh(
       new THREE.PlaneGeometry(2.2, 1.6),
       new THREE.MeshBasicMaterial({ color: 0xbae6fd, transparent: true, opacity: 0.75 })
@@ -156,7 +137,7 @@ export function Room3DViewer({
     windowGlass.position.set(-roomSize / 2 + 0.18, 2.1, 0);
     scene.add(windowGlass);
 
-    // Doorway Frame on Front Wall (Entrance at Z = roomSize/2, X = 0)
+    // Doorway Frame on Front Wall (Z = roomSize/2)
     const doorFrame = new THREE.Mesh(
       new THREE.BoxGeometry(1.4, 2.6, 0.2),
       new THREE.MeshStandardMaterial({ color: 0x064e3b })
@@ -169,10 +150,10 @@ export function Room3DViewer({
       new THREE.MeshStandardMaterial({ color: 0x047857 })
     );
     doorPanel.position.set(0.4, 1.2, roomSize / 2);
-    doorPanel.rotation.y = -Math.PI / 4; // Open door welcoming Chi
+    doorPanel.rotation.y = -Math.PI / 4;
     scene.add(doorPanel);
 
-    // Doorway "Entrance" glowing threshold
+    // Doorway Glowing Threshold
     const entranceThreshold = new THREE.Mesh(
       new THREE.PlaneGeometry(1.6, 0.6),
       new THREE.MeshBasicMaterial({ color: 0x10b981, transparent: true, opacity: 0.35 })
@@ -181,116 +162,128 @@ export function Room3DViewer({
     entranceThreshold.position.set(0, 0.02, roomSize / 2 - 0.3);
     scene.add(entranceThreshold);
 
-    // 2. Build 3D Furniture Groups
-    // A. Bed Group (Wooden frame, headboard, mattress, pillows)
-    const bedGroup = new THREE.Group();
-    const bedFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(2.0, 0.45, 2.4),
-      new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.5 })
-    );
-    bedFrame.position.y = 0.225;
-    bedFrame.castShadow = true;
-    bedFrame.receiveShadow = true;
-    bedGroup.add(bedFrame);
+    // 2. Build 3D Furniture strictly matching the ACTUAL detected furniture type
+    const focalGroup = new THREE.Group();
 
-    // Solid Headboard
-    const headboard = new THREE.Mesh(
-      new THREE.BoxGeometry(2.0, 1.3, 0.15),
-      new THREE.MeshStandardMaterial({ color: 0x361602, roughness: 0.4 })
-    );
-    headboard.position.set(0, 0.65, -1.15);
-    headboard.castShadow = true;
-    bedGroup.add(headboard);
+    if (focalType === "sofa") {
+      // 3D Living Room Sofa
+      // Base cushion
+      const sofaBase = new THREE.Mesh(
+        new THREE.BoxGeometry(2.4, 0.45, 1.0),
+        new THREE.MeshStandardMaterial({ color: 0x1e3a34, roughness: 0.7 })
+      );
+      sofaBase.position.y = 0.225;
+      sofaBase.castShadow = true;
+      focalGroup.add(sofaBase);
 
-    // Mattress (Crisp linen white)
-    const mattress = new THREE.Mesh(
-      new THREE.BoxGeometry(1.85, 0.35, 2.2),
-      new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.7 })
-    );
-    mattress.position.set(0, 0.55, 0.05);
-    mattress.castShadow = true;
-    bedGroup.add(mattress);
+      // Backrest
+      const sofaBack = new THREE.Mesh(
+        new THREE.BoxGeometry(2.4, 0.65, 0.25),
+        new THREE.MeshStandardMaterial({ color: 0x142c27, roughness: 0.7 })
+      );
+      sofaBack.position.set(0, 0.65, -0.375);
+      focalGroup.add(sofaBack);
 
-    // 2 Pillows
-    const pillowMat = new THREE.MeshStandardMaterial({ color: 0xecfdf5, roughness: 0.6 });
-    const pillow1 = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.45), pillowMat);
-    pillow1.position.set(-0.45, 0.8, -0.75);
-    const pillow2 = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.45), pillowMat);
-    pillow2.position.set(0.45, 0.8, -0.75);
-    bedGroup.add(pillow1);
-    bedGroup.add(pillow2);
+      // Left & Right Armrests
+      const armMat = new THREE.MeshStandardMaterial({ color: 0x142c27 });
+      const leftArm = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.5, 1.0), armMat);
+      leftArm.position.set(-1.075, 0.45, 0);
+      const rightArm = new THREE.Mesh(new THREE.BoxGeometry(0.25, 0.5, 1.0), armMat);
+      rightArm.position.set(1.075, 0.45, 0);
+      focalGroup.add(leftArm);
+      focalGroup.add(rightArm);
 
-    // Duvet blanket (Emerald accent)
-    const blanket = new THREE.Mesh(
-      new THREE.BoxGeometry(1.86, 0.12, 1.4),
-      new THREE.MeshStandardMaterial({ color: 0x065f46, roughness: 0.5 })
-    );
-    blanket.position.set(0, 0.72, 0.45);
-    bedGroup.add(blanket);
+      // Accent Pillows
+      const pillowMat = new THREE.MeshStandardMaterial({ color: 0xf59e0b });
+      const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.15), pillowMat);
+      p1.position.set(-0.7, 0.55, -0.2);
+      const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.35, 0.35, 0.15), pillowMat);
+      p2.position.set(0.7, 0.55, -0.2);
+      focalGroup.add(p1);
+      focalGroup.add(p2);
+    } else if (focalType === "desk") {
+      // 3D Office Workstation
+      const deskTop = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0, 0.08, 1.0),
+        new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.4 })
+      );
+      deskTop.position.y = 1.0;
+      deskTop.castShadow = true;
+      focalGroup.add(deskTop);
 
-    scene.add(bedGroup);
-    objectsRef.current.bed = bedGroup;
+      // 4 Legs
+      const legGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.96);
+      const legMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, metalness: 0.8 });
+      [
+        [-0.9, 0.48, -0.4],
+        [0.9, 0.48, -0.4],
+        [-0.9, 0.48, 0.4],
+        [0.9, 0.48, 0.4],
+      ].forEach(([lx, ly, lz]) => {
+        const leg = new THREE.Mesh(legGeo, legMat);
+        leg.position.set(lx, ly, lz);
+        focalGroup.add(leg);
+      });
 
-    // B. Desk & Chair Group
-    const deskGroup = new THREE.Group();
-    const deskTop = new THREE.Mesh(
-      new THREE.BoxGeometry(1.8, 0.1, 0.9),
-      new THREE.MeshStandardMaterial({ color: 0x78350f, roughness: 0.5 })
-    );
-    deskTop.position.y = 1.0;
-    deskTop.castShadow = true;
-    deskGroup.add(deskTop);
+      // Laptop / Monitors on Desk
+      const laptop = new THREE.Mesh(
+        new THREE.BoxGeometry(0.45, 0.02, 0.32),
+        new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.85 })
+      );
+      laptop.position.set(0, 1.05, 0);
+      focalGroup.add(laptop);
 
-    // Desk Legs
-    const legGeo = new THREE.CylinderGeometry(0.04, 0.04, 0.95);
-    const legMat = new THREE.MeshStandardMaterial({ color: 0x1e293b, metalness: 0.8 });
-    const legOffsets = [
-      [-0.8, 0.475, -0.35],
-      [0.8, 0.475, -0.35],
-      [-0.8, 0.475, 0.35],
-      [0.8, 0.475, 0.35],
-    ];
-    legOffsets.forEach(([lx, ly, lz]) => {
-      const leg = new THREE.Mesh(legGeo, legMat);
-      leg.position.set(lx, ly, lz);
-      deskGroup.add(leg);
-    });
+      // Office Ergonomic Chair
+      const chairSeat = new THREE.Mesh(
+        new THREE.BoxGeometry(0.55, 0.08, 0.55),
+        new THREE.MeshStandardMaterial({ color: 0x0f766e })
+      );
+      chairSeat.position.set(0, 0.55, 0.65);
+      focalGroup.add(chairSeat);
 
-    // Laptop on Desk
-    const laptop = new THREE.Mesh(
-      new THREE.BoxGeometry(0.4, 0.02, 0.3),
-      new THREE.MeshStandardMaterial({ color: 0x94a3b8, metalness: 0.9 })
-    );
-    laptop.position.set(0, 1.06, 0);
-    deskGroup.add(laptop);
+      const chairBack = new THREE.Mesh(
+        new THREE.BoxGeometry(0.5, 0.65, 0.08),
+        new THREE.MeshStandardMaterial({ color: 0x115e59 })
+      );
+      chairBack.position.set(0, 0.9, 0.9);
+      focalGroup.add(chairBack);
+    } else {
+      // 3D Bedroom Bed
+      const bedFrame = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0, 0.45, 2.4),
+        new THREE.MeshStandardMaterial({ color: 0x451a03, roughness: 0.5 })
+      );
+      bedFrame.position.y = 0.225;
+      bedFrame.castShadow = true;
+      focalGroup.add(bedFrame);
 
-    deskGroup.position.set(2.2, 0, 1.2);
-    deskGroup.rotation.y = -Math.PI / 4;
-    scene.add(deskGroup);
-    objectsRef.current.desk = deskGroup;
+      const headboard = new THREE.Mesh(
+        new THREE.BoxGeometry(2.0, 1.3, 0.15),
+        new THREE.MeshStandardMaterial({ color: 0x361602, roughness: 0.4 })
+      );
+      headboard.position.set(0, 0.65, -1.15);
+      focalGroup.add(headboard);
 
-    // C. Vanity Full-Length Mirror
-    const mirrorGroup = new THREE.Group();
-    const mirrorFrame = new THREE.Mesh(
-      new THREE.BoxGeometry(0.9, 1.8, 0.08),
-      new THREE.MeshStandardMaterial({ color: 0xb45309, roughness: 0.3 })
-    );
-    mirrorFrame.position.y = 1.0;
-    mirrorGroup.add(mirrorFrame);
+      const mattress = new THREE.Mesh(
+        new THREE.BoxGeometry(1.85, 0.35, 2.2),
+        new THREE.MeshStandardMaterial({ color: 0xf8fafc, roughness: 0.7 })
+      );
+      mattress.position.set(0, 0.55, 0.05);
+      focalGroup.add(mattress);
 
-    const mirrorGlass = new THREE.Mesh(
-      new THREE.PlaneGeometry(0.75, 1.65),
-      new THREE.MeshStandardMaterial({ color: 0xe2e8f0, roughness: 0.05, metalness: 0.95 })
-    );
-    mirrorGlass.position.set(0, 1.0, 0.05);
-    mirrorGroup.add(mirrorGlass);
+      const pillowMat = new THREE.MeshStandardMaterial({ color: 0xecfdf5 });
+      const p1 = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.45), pillowMat);
+      p1.position.set(-0.45, 0.8, -0.75);
+      const p2 = new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.15, 0.45), pillowMat);
+      p2.position.set(0.45, 0.8, -0.75);
+      focalGroup.add(p1);
+      focalGroup.add(p2);
+    }
 
-    mirrorGroup.position.set(-3.2, 0, 1.8);
-    mirrorGroup.rotation.y = Math.PI / 2;
-    scene.add(mirrorGroup);
-    objectsRef.current.mirror = mirrorGroup;
+    scene.add(focalGroup);
+    meshesRef.current.focalGroup = focalGroup;
 
-    // D. Jade Wealth Plant in Terracotta Pot
+    // 3. Living Jade Wealth Plant in Terracotta Pot
     const plantGroup = new THREE.Group();
     const pot = new THREE.Mesh(
       new THREE.CylinderGeometry(0.3, 0.22, 0.5, 16),
@@ -299,7 +292,6 @@ export function Room3DViewer({
     pot.position.y = 0.25;
     plantGroup.add(pot);
 
-    // Leaves
     const leafMat = new THREE.MeshStandardMaterial({ color: 0x10b981, roughness: 0.3 });
     for (let i = 0; i < 9; i++) {
       const angle = (i / 9) * Math.PI * 2;
@@ -307,61 +299,54 @@ export function Room3DViewer({
       leaf.scale.set(1.2, 0.3, 0.8);
       leaf.position.set(Math.cos(angle) * 0.25, 0.6 + (i % 3) * 0.15, Math.sin(angle) * 0.25);
       leaf.rotation.z = Math.cos(angle) * 0.5;
-      leaf.rotation.x = Math.sin(angle) * 0.5;
       plantGroup.add(leaf);
     }
 
     plantGroup.position.set(-2.5, 0, -2.5); // Far-Left Wealth Corner
     scene.add(plantGroup);
-    objectsRef.current.plant = plantGroup;
+    meshesRef.current.plantGroup = plantGroup;
 
-    // 3. 3D Chi Flow Energy Streams (Harmonious green vs Sha Chi red)
-    // A. Harmonious Sheng Chi Particles
+    // 4. Chi Streams (Harmonious Sheng Chi green vs Harsh Sha Chi red)
     const particleCount = 180;
     const particleGeo = new THREE.BufferGeometry();
     const particlePositions = new Float32Array(particleCount * 3);
-    const particleAlphas = new Float32Array(particleCount);
 
     for (let i = 0; i < particleCount; i++) {
       const t = i / particleCount;
-      // Curved flowing path from entrance (0, 0.2, 3.5) curling gracefully across the room
       const x = Math.sin(t * Math.PI * 2) * 2.2;
       const z = 3.5 - t * 5.5;
       const y = 0.2 + Math.sin(t * Math.PI * 3) * 0.35;
-
       particlePositions[i * 3] = x;
       particlePositions[i * 3 + 1] = y;
       particlePositions[i * 3 + 2] = z;
-      particleAlphas[i] = Math.random();
     }
 
     particleGeo.setAttribute("position", new THREE.BufferAttribute(particlePositions, 3));
-    const particleMat = new THREE.PointsMaterial({
-      color: 0x34d399,
-      size: 0.16,
-      transparent: true,
-      opacity: 0.8,
-      blending: THREE.AdditiveBlending,
-    });
-    const chiParticles = new THREE.Points(particleGeo, particleMat);
+    const chiParticles = new THREE.Points(
+      particleGeo,
+      new THREE.PointsMaterial({
+        color: 0x34d399,
+        size: 0.16,
+        transparent: true,
+        opacity: 0.8,
+        blending: THREE.AdditiveBlending,
+      })
+    );
     scene.add(chiParticles);
-    objectsRef.current.chiParticles = chiParticles;
+    meshesRef.current.chiParticles = chiParticles;
 
-    // B. Harsh Direct Sha Chi Red Laser (Wind tunnel from doorway)
-    const lineMat = new THREE.LineDashedMaterial({
-      color: 0xf43f5e,
-      dashSize: 0.3,
-      gapSize: 0.15,
-      linewidth: 3,
-    });
+    // Harsh Red Sha Chi Laser Line
     const lineGeo = new THREE.BufferGeometry().setFromPoints([
       new THREE.Vector3(0, 0.4, 3.5),
       new THREE.Vector3(0, 0.4, -2.5),
     ]);
-    const shaChiBeam = new THREE.Line(lineGeo, lineMat);
-    shaChiBeam.computeLineDistances();
-    scene.add(shaChiBeam);
-    objectsRef.current.shaChiBeam = shaChiBeam;
+    const shaBeam = new THREE.Line(
+      lineGeo,
+      new THREE.LineDashedMaterial({ color: 0xf43f5e, dashSize: 0.3, gapSize: 0.15, linewidth: 3 })
+    );
+    shaBeam.computeLineDistances();
+    scene.add(shaBeam);
+    meshesRef.current.shaBeam = shaBeam;
 
     // Animation loop
     let animId: number;
@@ -384,7 +369,7 @@ export function Room3DViewer({
       animId = requestAnimationFrame(animate);
       const elapsedTime = clock.getElapsedTime();
 
-      // Animate Chi particles flowing in waves
+      // Flow Chi particles
       if (chiParticles.geometry.attributes.position) {
         const positions = chiParticles.geometry.attributes.position.array as Float32Array;
         for (let i = 0; i < particleCount; i++) {
@@ -394,8 +379,8 @@ export function Room3DViewer({
       }
 
       // Pulse red Sha Chi beam
-      if (shaChiBeam.material instanceof THREE.LineDashedMaterial) {
-        shaChiBeam.material.opacity = 0.4 + Math.sin(elapsedTime * 4) * 0.4;
+      if (shaBeam.material instanceof THREE.LineDashedMaterial) {
+        shaBeam.material.opacity = 0.4 + Math.sin(elapsedTime * 4) * 0.4;
       }
 
       renderer.render(scene, camera);
@@ -403,7 +388,6 @@ export function Room3DViewer({
 
     animate();
 
-    // Resize handler
     const handleResize = () => {
       if (!container || !rendererRef.current || !cameraRef.current) return;
       const w = container.clientWidth;
@@ -421,37 +405,32 @@ export function Room3DViewer({
       renderer.dispose();
       scene.clear();
     };
-  }, []);
+  }, [focalType]);
 
-  // Update Bed and Furniture Position when state changes
+  // Animate furniture placement when toggling Before vs After
   useEffect(() => {
-    const bed = objectsRef.current.bed;
-    const shaBeam = objectsRef.current.shaChiBeam;
-    if (!bed) return;
+    const focal = meshesRef.current.focalGroup;
+    const shaBeam = meshesRef.current.shaBeam;
+    if (!focal) return;
 
-    if (bedPosition === "command_diagonal") {
-      // Golden Command Position: Far-Right wall diagonal to door, head against solid wall
-      bed.position.set(1.8, 0, -1.8);
-      bed.rotation.y = 0;
+    if (layoutMode === "after") {
+      // Golden Command Position: Diagonal corner with solid wall backing
+      focal.position.set(1.8, 0, -1.8);
+      focal.rotation.y = focalType === "desk" ? -Math.PI / 4 : 0;
       if (shaBeam) shaBeam.visible = false;
-    } else if (bedPosition === "door_line") {
-      // Deadly Coffin Position: Straight in line with entrance door!
-      bed.position.set(0, 0, 0.4);
-      bed.rotation.y = 0;
-      if (shaBeam) shaBeam.visible = true;
     } else {
-      // Side Wall
-      bed.position.set(-1.8, 0, -1.8);
-      bed.rotation.y = 0;
-      if (shaBeam) shaBeam.visible = false;
+      // Scanned Inauspicious Position: Directly in doorway wind tunnel
+      focal.position.set(0, 0, 0.6);
+      focal.rotation.y = 0;
+      if (shaBeam) shaBeam.visible = true;
     }
 
     if (onScoreChange) {
-      onScoreChange(calculateCurrentScore(bedPosition));
+      onScoreChange(layoutMode === "after" ? 94 : 52);
     }
-  }, [bedPosition, onScoreChange]);
+  }, [layoutMode, focalType, onScoreChange]);
 
-  // Pointer Drag handlers for touch & mouse 360° orbit
+  // Pointer drag for 360° orbit
   const handlePointerDown = (clientX: number, clientY: number) => {
     isPointerDownRef.current = true;
     previousPointerPosRef.current = { x: clientX, y: clientY };
@@ -479,7 +458,6 @@ export function Room3DViewer({
     isPointerDownRef.current = false;
   };
 
-  // Quick camera presets
   const setCameraPreset = (preset: "orbit" | "top" | "door") => {
     setCameraView(preset);
     if (!cameraRef.current) return;
@@ -503,7 +481,6 @@ export function Room3DViewer({
     <div className="space-y-3">
       {/* 3D Canvas Box */}
       <div className="relative w-full aspect-[4/3] sm:aspect-video rounded-3xl overflow-hidden border border-emerald-500/30 shadow-2xl bg-[#020e0c] touch-none">
-        {/* Three.js Container */}
         <div
           ref={mountRef}
           className="w-full h-full cursor-grab active:cursor-grabbing"
@@ -528,7 +505,7 @@ export function Room3DViewer({
               Spatial Chi:{" "}
               <span
                 className={`font-mono text-xs ${
-                  currentScore >= 90 ? "text-emerald-400" : "text-rose-400"
+                  currentScore >= 90 ? "text-emerald-400 font-bold" : "text-rose-400 font-bold"
                 }`}
               >
                 {currentScore}/100
@@ -587,73 +564,73 @@ export function Room3DViewer({
           <div className="flex items-center gap-1.5">
             <Sparkles className="w-4 h-4 text-emerald-400" />
             <span className="text-xs font-bold text-white">
-              Try Moving the Bed in 3D:
+              3D Layout Simulator ({focalLabel}):
             </span>
           </div>
-          <span className="text-[10px] font-mono text-slate-400">
-            Interactive Simulator
+          <span className="text-[10px] font-mono text-emerald-300 font-bold">
+            Live 3D Rearrange
           </span>
         </div>
 
-        {/* 3 Positions User can test */}
+        {/* 2 Toggle Modes */}
         <div className="grid grid-cols-2 gap-2">
-          {/* Position 1: Golden Command Position */}
+          {/* Option 1: AI Harmonized (Command Position) */}
           <button
             type="button"
-            onClick={() => setBedPosition("command_diagonal")}
+            onClick={() => setLayoutMode("after")}
             className={`p-3 rounded-2xl border text-left transition-all ${
-              bedPosition === "command_diagonal"
+              layoutMode === "after"
                 ? "bg-emerald-950/80 border-emerald-400 text-white shadow-lg shadow-emerald-950"
                 : "glass-pill text-slate-300 hover:text-white border-transparent"
             }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-emerald-300">
-                ✨ Command Position
+                ✨ AI Harmonized
               </span>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-300">
                 94 pts
               </span>
             </div>
             <p className="text-[10px] text-slate-300 mt-1 leading-snug">
-              Diagonal from door with solid supportive wall behind headboard.
+              {focalLabel} anchored in diagonal Command Position with solid wall backing.
             </p>
           </button>
 
-          {/* Position 2: Coffin Position (Direct Line) */}
+          {/* Option 2: Current Scanned (Inauspicious) */}
           <button
             type="button"
-            onClick={() => setBedPosition("door_line")}
+            onClick={() => setLayoutMode("before")}
             className={`p-3 rounded-2xl border text-left transition-all ${
-              bedPosition === "door_line"
+              layoutMode === "before"
                 ? "bg-rose-950/80 border-rose-500 text-white shadow-lg shadow-rose-950"
                 : "glass-pill text-slate-300 hover:text-white border-transparent"
             }`}
           >
             <div className="flex items-center justify-between">
               <span className="text-xs font-bold text-rose-400">
-                ⚠️ Coffin Position
+                ⚠️ Scanned Layout
               </span>
               <span className="text-[9px] font-mono font-bold px-1.5 py-0.2 rounded bg-rose-500/20 text-rose-300">
-                54 pts
+                52 pts
               </span>
             </div>
             <p className="text-[10px] text-slate-300 mt-1 leading-snug">
-              Feet point right out the door. Direct Sha Chi strikes during sleep.
+              {focalLabel} in doorway rushing line. Sha Chi disturbs energy balance.
             </p>
           </button>
         </div>
 
-        {/* Plain English Explanation of what just happened in 3D */}
+        {/* Plain English Explanation */}
         <div className="p-3 rounded-2xl bg-slate-950/70 border border-emerald-500/15 flex items-start gap-2.5">
-          {bedPosition === "command_diagonal" ? (
+          {layoutMode === "after" ? (
             <>
               <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
               <div className="text-[11px] text-slate-200 leading-relaxed">
                 <strong className="text-emerald-400 block mb-0.5">
-                  Why this layout works:
+                  Command Position Advantage:
                 </strong>
-                You can immediately see the entrance door without neck strain, while your head is guarded by a solid wall. The green Chi energy particles circulate smoothly without striking your body.
+                Your {focalLabel.toLowerCase()} is now positioned where you have a commanding view of the room entrance while your back is protected by a solid structural wall. The green Chi energy flows freely without obstruction.
               </div>
             </>
           ) : (
@@ -661,9 +638,9 @@ export function Room3DViewer({
               <AlertTriangle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
               <div className="text-[11px] text-slate-200 leading-relaxed">
                 <strong className="text-rose-400 block mb-0.5">
-                  The Problem:
+                  Energetic Flaw Detected:
                 </strong>
-                Notice the red laser beam rushing directly through the open doorway right into the bed. In classical Feng Shui, this is the "Coffin Line" — causing nocturnal awakenings and elevated cortisol.
+                Notice the red Sha Chi laser beam cutting directly from the doorway into the {focalLabel.toLowerCase()}. This doorway wind creates continuous subconscious stress and fragments peaceful Chi.
               </div>
             </>
           )}

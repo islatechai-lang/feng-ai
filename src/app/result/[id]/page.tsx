@@ -436,6 +436,7 @@ function ResultContent({ params }: PageProps) {
           <div className="space-y-4">
             <Room3DViewer
               roomType={record.roomType}
+              sceneData={result.scene3D}
               onScoreChange={(newScore) => setSimulatedScore(newScore)}
             />
           </div>

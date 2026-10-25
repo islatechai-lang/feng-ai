@@ -93,6 +93,41 @@ export interface DecorSuggestion {
   color: string;
 }
 
+export type FurnitureItemType =
+  | "bed"
+  | "desk"
+  | "sofa"
+  | "chair"
+  | "table"
+  | "dining_table"
+  | "tv_unit"
+  | "bookshelf"
+  | "plant"
+  | "mirror"
+  | "wardrobe"
+  | "lighting"
+  | "cabinet"
+  | "other";
+
+export interface SceneItem3D {
+  id: string;
+  type: FurnitureItemType;
+  label: string;
+  initialPos: { x: number; y: number; z: number; rotY?: number };
+  rearrangedPos: { x: number; y: number; z: number; rotY?: number };
+  status: "inauspicious" | "harmonious";
+  issue?: string;
+  fixReason: string;
+}
+
+export interface Room3DScene {
+  roomType: RoomType;
+  detectedItems: SceneItem3D[];
+  primaryFocalType: FurnitureItemType;
+  doorPosition: { x: number; z: number };
+  windowPosition: { x: number; z: number };
+}
+
 export interface FengShuiResult {
   score: number;
   grade: "A+" | "A" | "B" | "C" | "D" | "F";
@@ -106,6 +141,7 @@ export interface FengShuiResult {
   issues: FengShuiIssue[];
   suggestedMoves: SuggestedMove[];
   imageEditPrompt: string;
+  scene3D?: Room3DScene;
   luckyGuide: {
     primaryElement: FiveElement;
     luckyColors: string[];

@@ -156,56 +156,42 @@ export default function NativeAppHome() {
               </p>
             </div>
 
-            {/* Glowing Big Action Button (360° Scan Trigger) */}
-            <div className="relative py-2 flex flex-col items-center justify-center">
+            {/* Glowing Big Action Button (Full Focus on 3D Circular Scan) */}
+            <div className="relative py-4 flex flex-col items-center justify-center">
               <button
                 type="button"
                 onClick={() => setShowScanner360(true)}
                 className="group relative active:scale-95 transition-transform"
               >
                 {/* Glow ring */}
-                <div className="absolute -inset-3 rounded-full bg-gradient-to-tr from-emerald-500/30 via-teal-400/25 to-amber-300/20 blur-xl group-hover:opacity-100 transition duration-500" />
-                <div className="relative w-28 h-28 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-400 to-emerald-300 p-1 shadow-2xl flex items-center justify-center">
-                  <div className="w-full h-full rounded-full bg-[#031915] flex flex-col items-center justify-center gap-1 text-emerald-300 group-hover:text-emerald-200 transition-colors">
-                    <Scan className="w-8 h-8 stroke-[2] animate-pulse" />
-                    <span className="text-[11px] font-black tracking-tight">
-                      360° Scan
+                <div className="absolute -inset-4 rounded-full bg-gradient-to-tr from-emerald-500/35 via-teal-400/30 to-amber-300/25 blur-2xl group-hover:opacity-100 transition duration-500 animate-pulse" />
+                <div className="relative w-32 h-32 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-400 to-emerald-300 p-1.5 shadow-2xl flex items-center justify-center">
+                  <div className="w-full h-full rounded-full bg-[#031915] flex flex-col items-center justify-center gap-1.5 text-emerald-300 group-hover:text-emerald-200 transition-colors">
+                    <Scan className="w-10 h-10 stroke-[2] text-emerald-400 animate-pulse" />
+                    <span className="text-xs font-black tracking-tight">
+                      3D Room Scan
                     </span>
                   </div>
                 </div>
               </button>
 
-              <div className="flex items-center gap-2 mt-4">
-                {/* Secondary: Regular Camera */}
-                <label
-                  htmlFor="camera-input"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-pill text-xs font-semibold text-slate-300 hover:text-white cursor-pointer active:scale-95 transition-all border border-emerald-500/20"
-                >
-                  <Camera className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Snap Photo</span>
-                </label>
+              <button
+                type="button"
+                onClick={() => setShowScanner360(true)}
+                className="mt-4 px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-200 text-slate-950 text-xs font-black tracking-tight shadow-xl shadow-emerald-950/60 active:scale-95 transition flex items-center gap-1.5"
+              >
+                <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                <span>Start 360° Circular Scan</span>
+              </button>
 
-                {/* Secondary: Gallery Upload */}
-                <label
-                  htmlFor="gallery-input"
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-pill text-xs font-semibold text-slate-300 hover:text-white cursor-pointer active:scale-95 transition-all border border-emerald-500/20"
-                >
-                  <Upload className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Upload</span>
-                </label>
-              </div>
+              {/* Discreet fallback for desktop or photo upload */}
+              <label
+                htmlFor="gallery-input"
+                className="mt-3 text-[10px] text-slate-500 hover:text-emerald-300 cursor-pointer underline transition"
+              >
+                or upload room panorama file
+              </label>
 
-              {/* Hidden file inputs */}
-              <input
-                id="camera-input"
-                type="file"
-                accept="image/*"
-                capture="environment"
-                className="hidden"
-                onChange={(e) => {
-                  if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
-                }}
-              />
               <input
                 id="gallery-input"
                 type="file"
@@ -218,7 +204,7 @@ export default function NativeAppHome() {
 
               {isProcessingImage && (
                 <p className="text-xs text-emerald-400 mt-2 animate-pulse font-medium">
-                  Optimizing photo resolution...
+                  Constructing 3D spatial model...
                 </p>
               )}
             </div>
