@@ -8,11 +8,20 @@ export const DetectedObjectSchema = z.object({
 });
 
 export const VisionAnalysisResponseSchema = z.object({
-  roomType: z.enum(["bedroom", "living_room", "office", "kitchen", "shop"]),
-  clutterLevel: z.number().min(1).max(10),
-  lightingQuality: z.enum(["poor", "moderate", "bright", "harsh"]),
-  dominantColors: z.array(z.string()),
-  detectedObjects: z.array(DetectedObjectSchema),
+  roomType: z.string().transform((val) => {
+    const cleaned = val.toLowerCase().replace(/[\s-]+/g, "_");
+    if (cleaned.includes("living")) return "living_room";
+    if (cleaned.includes("office") || cleaned.includes("study") || cleaned.includes("desk")) return "office";
+    if (cleaned.includes("kitchen")) return "kitchen";
+    if (cleaned.includes("dining")) return "dining";
+    if (cleaned.includes("bed")) return "bedroom";
+    if (cleaned.includes("studio")) return "studio";
+    return "living_room";
+  }),
+  clutterLevel: z.number().min(1).max(10).default(3),
+  lightingQuality: z.enum(["poor", "moderate", "bright", "harsh"]).default("moderate"),
+  dominantColors: z.array(z.string()).default(["warm white", "wood"]),
+  detectedObjects: z.array(DetectedObjectSchema).default([]),
   notes: z.string().default(""),
 });
 

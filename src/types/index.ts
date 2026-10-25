@@ -1,4 +1,12 @@
-export type RoomType = "bedroom" | "living_room" | "office" | "kitchen" | "shop";
+export type RoomType =
+  | "bedroom"
+  | "living_room"
+  | "office"
+  | "kitchen"
+  | "dining"
+  | "studio"
+  | "shop"
+  | "auto";
 
 export type CompassDirection =
   | "N"
@@ -36,6 +44,7 @@ export interface FengShuiIssue {
 export interface DetectedFurniture {
   id: string;
   label: string;
+  type?: FurnitureItemType;
   position: string; // e.g. "North wall", "Center", "Facing door"
   facesWhat?: string;
   coords?: { x: number; y: number; width: number; height: number };
