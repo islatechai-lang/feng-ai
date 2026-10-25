@@ -47,7 +47,15 @@ This document records technical choices, deviations, and improvements made while
 ## 5. Compass Picker with HTML5 Device Sensor Integration
 
 - **Brief Note:** Section 3 requested a compass picker with device compass via browser API where available, plus "I don't know".
-- **Decision:**
+- **Decision:** Integrated HTML5 `deviceorientationabsolute` / `deviceorientation` sensor in `CompassPicker.tsx` with continuous live heading readout and smooth gyro rotation.
+
+---
+
+## 6. Direct Google Gemini Multimodal Vision & Image Inpainting Integration
+
+- **Decision:** Integrated Google Gemini direct API (`gemini-3.1-flash-lite` for multimodal vision/reasoning and `gemini-2.5-flash-image` / `gemini-3.1-flash-lite-image` for photorealistic image relayout).
+- **Relayout Inpainting:** Takes the user's actual room photo as base64 and transforms the space into a tranquil Feng Shui Command Position layout, preserving wall architecture while rearranging furniture and introducing 5-element remedies.
+- **Native Mobile Shell:** Optimized exclusively for mobile apps (e.g., Median.co packaging), with floating bottom navigation, tactile camera/upload triggers, interactive 3-step action plan checklist, and removal of cluttered instant sample presets.
   - Built an interactive rotating SVG compass rose (`src/components/CompassPicker.tsx`) displaying all 8 cardinal/intercardinal points (N, NE, E, SE, S, SW, W, NW).
   - Implemented HTML5 `deviceorientation` sensor integration with iOS 13+ `DeviceOrientationEvent.requestPermission()` handling.
   - Added an "I don't know" option that defaults to Tai Chi central balance.

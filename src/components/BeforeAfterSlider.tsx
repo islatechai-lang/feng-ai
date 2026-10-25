@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useCallback } from "react";
-import { Lock, Sparkles } from "lucide-react";
+import { Sparkles, ArrowLeftRight, CheckCircle2 } from "lucide-react";
 
 interface BeforeAfterSliderProps {
   originalUrl: string;
@@ -47,6 +47,22 @@ export function BeforeAfterSlider({
 
   return (
     <div className="space-y-3">
+      {/* Visual Instruction Badge */}
+      <div className="flex items-center justify-between text-[11px] px-1 font-semibold text-slate-400">
+        <span className="flex items-center gap-1.5 text-rose-400">
+          <span className="w-1.5 h-1.5 rounded-full bg-rose-400" />
+          <span>Original Room Layout</span>
+        </span>
+        <span className="flex items-center gap-1 text-slate-500">
+          <ArrowLeftRight className="w-3 h-3" />
+          <span>Slide to compare</span>
+        </span>
+        <span className="flex items-center gap-1.5 text-emerald-400 font-bold">
+          <span>AI Feng Shui Redesign</span>
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400" />
+        </span>
+      </div>
+
       <div
         ref={containerRef}
         onMouseDown={onMouseDown}
@@ -54,17 +70,15 @@ export function BeforeAfterSlider({
         onMouseLeave={onMouseUp}
         onMouseMove={onMouseMove}
         onTouchMove={onTouchMove}
-        className="relative w-full aspect-video sm:aspect-[16/10] max-h-[540px] rounded-3xl overflow-hidden select-none cursor-ew-resize border border-slate-800 shadow-2xl bg-slate-950"
+        className="relative w-full aspect-[4/3] sm:aspect-video rounded-3xl overflow-hidden select-none cursor-ew-resize border border-emerald-500/30 shadow-2xl bg-slate-950 touch-none"
       >
-        {/* After Image (Background) */}
+        {/* After Image (Background) - Crystal Clear AI Relayout */}
         <div className="absolute inset-0 w-full h-full">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={afterUrl}
             alt="Feng Shui Harmonized Room"
-            className={`w-full h-full object-cover ${
-              isLocked ? "blur-xl scale-105 saturate-150" : ""
-            }`}
+            className="w-full h-full object-cover"
           />
         </div>
 
@@ -88,54 +102,27 @@ export function BeforeAfterSlider({
 
         {/* Center Draggable Divider */}
         <div
-          className="absolute top-0 bottom-0 w-1 bg-white shadow-2xl z-20 pointer-events-none"
+          className="absolute top-0 bottom-0 w-1 bg-gradient-to-b from-emerald-300 via-white to-emerald-300 shadow-[0_0_15px_rgba(16,185,129,0.7)] z-20 pointer-events-none"
           style={{ left: `${sliderPos}%` }}
         >
           {/* Center Handle Knob */}
-          <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-slate-950 border-2 border-white shadow-xl flex items-center justify-center text-white text-xs font-bold pointer-events-auto">
+          <div className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-slate-950/90 border-2 border-emerald-400 shadow-xl flex items-center justify-center text-emerald-300 text-xs font-black pointer-events-auto backdrop-blur-md">
             <span>⇄</span>
           </div>
         </div>
 
-        {/* Badges */}
-        <div className="absolute top-4 left-4 z-10 bg-slate-950/80 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-slate-300 border border-slate-700 shadow">
-          Original Layout
+        {/* Badges on the corners */}
+        <div className="absolute top-3 left-3 px-2.5 py-1 rounded-full bg-slate-950/80 backdrop-blur-md text-[10px] font-bold text-slate-300 border border-slate-700 pointer-events-none shadow">
+          BEFORE
         </div>
-
-        <div className="absolute top-4 right-4 z-10 bg-emerald-950/90 backdrop-blur-md px-3 py-1 rounded-full text-xs font-semibold text-emerald-300 border border-emerald-600 shadow flex items-center gap-1.5">
-          <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          <span>Feng Shui Harmony</span>
+        <div className="absolute top-3 right-3 px-2.5 py-1 rounded-full bg-emerald-950/80 backdrop-blur-md text-[10px] font-bold text-emerald-300 border border-emerald-500/40 pointer-events-none shadow flex items-center gap-1">
+          <Sparkles className="w-3 h-3 text-emerald-400" />
+          <span>AFTER: HARMONIZED</span>
         </div>
-
-        {/* Locked Paywall Overlay on the "After" side */}
-        {isLocked && sliderPos < 80 && (
-          <div className="absolute inset-y-0 right-0 left-1/3 z-10 flex items-center justify-center p-6 bg-slate-950/40 backdrop-blur-[3px]">
-            <div className="bg-slate-950/90 border border-emerald-500/40 p-5 rounded-2xl text-center max-w-xs shadow-2xl space-y-3">
-              <div className="w-10 h-10 mx-auto rounded-xl bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
-                <Lock className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-bold text-white">
-                  Rearranged Room Aligned
-                </h4>
-                <p className="text-xs text-slate-300 mt-1">
-                  Unlock to reveal the full AI transformation with your bed & desk in the optimal Command Position.
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={onUnlockClick}
-                className="w-full py-2.5 px-4 rounded-xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 hover:from-emerald-400 hover:to-teal-400 shadow-md shadow-emerald-950/50 transition-transform active:scale-95"
-              >
-                Unlock Full Result ($3.99)
-              </button>
-            </div>
-          </div>
-        )}
       </div>
 
-      <p className="text-center text-xs text-slate-400">
-        Drag the slider horizontally to compare your original room vs the Feng Shui rearranged sanctuary
+      <p className="text-center text-[10px] text-slate-400">
+        Drag slider left or right to reveal the authentic Feng Shui Command Position transformation.
       </p>
     </div>
   );

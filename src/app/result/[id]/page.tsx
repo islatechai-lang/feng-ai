@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { TopHeader } from "@/components/TopHeader";
 import { BottomNav } from "@/components/BottomNav";
@@ -24,6 +24,16 @@ import {
   Sliders,
   ChevronRight,
   ShieldAlert,
+  ArrowRight,
+  Check,
+  RotateCcw,
+  ShoppingBag,
+  ExternalLink,
+  Flame,
+  Leaf,
+  Droplet,
+  Mountain,
+  CircleDot,
 } from "lucide-react";
 
 interface PageProps {
@@ -34,21 +44,23 @@ function ResultContent({ params }: PageProps) {
   const resolvedParams = use(params);
   const analysisId = resolvedParams.id;
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   // Result state
   const [record, setRecord] = useState<any>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [activeTab, setActiveTab] = useState<"slider" | "annotated" | "diagram" | "guide">("slider");
+  const [activeTab, setActiveTab] = useState<"visual" | "checklist" | "floorplan" | "kua" | "remedies">("visual");
+
+  // Interactive Checklist State
+  const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({});
 
   // Modals
   const [showPaywall, setShowPaywall] = useState(false);
   const [showShareModal, setShowShareModal] = useState(false);
 
   useEffect(() => {
-    // Check if redirected from Stripe success with ?unlocked=true
     const queryUnlocked = searchParams.get("unlocked") === "true";
 
-    // Load analysis from sessionStorage or localStorage
     let loaded: any = null;
     try {
       const sessionData = sessionStorage.getItem(`analysis_${analysisId}`);
@@ -71,13 +83,13 @@ function ResultContent({ params }: PageProps) {
       }
       setRecord(loaded);
     } else {
-      // Create fallback demo record if navigated directly
+      // High quality fallback demo
       const fallbackRecord = {
         id: analysisId,
         roomType: "bedroom",
         doorDirection: "SW",
         goal: "sleep",
-        birthYear: 1993,
+        birthYear: 1996,
         originalImageUrl: "https://images.unsplash.com/photo-1540518614846-7ede433c4570?auto=format&fit=crop&w=1200&q=80",
         editedImageUrl: "https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1200&q=80",
         score: 54,
@@ -85,10 +97,10 @@ function ResultContent({ params }: PageProps) {
         result: {
           score: 54,
           grade: "D",
-          summary: "Your bedroom suffers from direct doorway Sha Chi alignment ('Coffin Position') and an unshielded reflective mirror.",
+          summary: "Your space suffers from direct doorway Sha Chi alignment ('Coffin Position') and an unshielded reflective mirror facing the sleeping area.",
           biggestProblem: {
             title: "Critical: The 'Coffin Position' (Bed in Line with Door)",
-            description: "Your bed is placed directly in line with the entryway, with the feet pointing straight out the door. In classical Feng Shui, rushing energy (Sha Chi) enters violently through the doorway like a wind tunnel, striking your body while you sleep.",
+            description: "Your bed is placed directly in line with the entryway, with the feet pointing straight out the door. In classical Feng Shui, rushing energy (Sha Chi) strikes your body while sleeping, preventing restorative deep sleep.",
             quickFix: "Shift the bed diagonally opposite the doorway against a solid interior wall.",
             severity: "critical" as IssueSeverity,
           },
@@ -99,26 +111,26 @@ function ResultContent({ params }: PageProps) {
               severity: "critical" as IssueSeverity,
               what: "Your bed is placed directly in line with the entryway.",
               why: "Sha Chi rushes through the open doorway like a wind tunnel, disrupting deep REM rejuvenation.",
-              fix: "Shift bed diagonally opposite the doorway against a solid wall.",
+              fix: "Shift bed diagonally opposite the doorway against a solid interior wall.",
               whichObject: "Bed",
               pinCoordinates: { x: 50, y: 70 },
             },
             {
               id: "mirror_facing_bed",
-              title: "Mirror Reflecting the Sleeping Area",
+              title: "Mirror Directly Reflecting the Bed",
               severity: "warning" as IssueSeverity,
-              what: "A dresser mirror directly reflects your bed.",
-              why: "Mirrors bounce dynamic Water Chi, causing nighttime restlessness and insomnia.",
-              fix: "Relocate mirror to adjacent wall away from sleeping sightlines.",
+              what: "A dresser mirror directly reflects your sleeping body.",
+              why: "Mirrors bounce dynamic Water Chi, causing nighttime restlessness, anxiety, and insomnia.",
+              fix: "Angle or relocate mirror away from your direct sleeping sightlines.",
               whichObject: "Mirror",
               pinCoordinates: { x: 25, y: 35 },
             },
             {
               id: "clutter_and_chi_choke",
-              title: "Stagnant Chi Accumulation (Clutter)",
+              title: "Stagnant Chi Accumulation (Under-Bed Clutter)",
               severity: "warning" as IssueSeverity,
-              what: "Under-bed storage and clothes hamper blocking floor pathway.",
-              why: "Creates stagnant Si Chi that leads to mental fog and sluggish mornings.",
+              what: "Under-bed storage blocking floor circulation.",
+              why: "Creates stagnant Si Chi that causes brain fog and morning fatigue.",
               fix: "Clear under-bed floor so Yin Chi can circulate smoothly.",
               whichObject: "Floor & Pathways",
               pinCoordinates: { x: 30, y: 80 },
@@ -126,10 +138,10 @@ function ResultContent({ params }: PageProps) {
           ],
           suggestedMoves: [
             {
-              item: "King Bed",
+              item: "Bed",
               from: "Direct line with the entrance doorway",
               to: "Diagonally across from the door against the solid North-East wall with clear view of entry",
-              reason: "Establishes True Command Position and eliminates Sha Chi.",
+              reason: "Establishes True Command Position, protects aura, eliminates Sha Chi.",
             },
             {
               item: "Vanity Mirror",
@@ -137,18 +149,31 @@ function ResultContent({ params }: PageProps) {
               to: "Beside door away from sleep sightlines",
               reason: "Prevents restless nocturnal Chi bounce.",
             },
+            {
+              item: "Storage Boxes",
+              from: "Beneath the bed frame",
+              to: "Inside closed wardrobe",
+              reason: "Restores continuous Chi circulation around your aura.",
+            },
           ],
           luckyGuide: {
             primaryElement: "earth",
-            luckyColors: ["Soft Taupe", "Warm Linen", "Dusty Rose"],
+            luckyColors: ["Soft Taupe", "Warm Linen", "Dusty Terracotta"],
             luckyDirections: ["SW", "NE", "NW", "W"],
             decorSuggestions: [
               {
-                item: "Air-purifying ZZ Plant",
+                item: "Air-purifying Jade Plant",
                 element: "wood",
-                placement: "Corner near doorway",
-                purpose: "Filters environmental toxins and lifts sluggish corner Chi",
+                placement: "South-East Wealth Corner",
+                purpose: "Attracts prosperous growth energy and cleanses indoor air toxins",
                 color: "Emerald Green",
+              },
+              {
+                item: "Warm 2700K Ceramic Table Lamp",
+                element: "fire",
+                placement: "Beside bed on solid nightstand",
+                purpose: "Softens aggressive Metal Chi and creates tranquil Yin ambiance",
+                color: "Warm Cream / Amber",
               },
             ],
           },
@@ -158,7 +183,6 @@ function ResultContent({ params }: PageProps) {
       setIsUnlocked(queryUnlocked);
     }
 
-    // Fire celebratory confetti on score reveal
     confetti({
       particleCount: 50,
       spread: 70,
@@ -166,6 +190,13 @@ function ResultContent({ params }: PageProps) {
       colors: ["#10b981", "#14b8a6", "#f59e0b"],
     });
   }, [analysisId, searchParams]);
+
+  const toggleStep = (stepId: string) => {
+    setCompletedSteps((prev) => ({
+      ...prev,
+      [stepId]: !prev[stepId],
+    }));
+  };
 
   const handleUnlockSuccess = () => {
     setIsUnlocked(true);
@@ -183,7 +214,6 @@ function ResultContent({ params }: PageProps) {
         console.warn(e);
       }
     }
-    // Confetti burst for unlock!
     confetti({
       particleCount: 100,
       spread: 90,
@@ -205,21 +235,24 @@ function ResultContent({ params }: PageProps) {
   const grade = result.grade;
   const biggestProblem = result.biggestProblem;
 
-  // Score color badge
   const scoreBadgeBg =
-    score >= 80 ? "text-emerald-400 border-emerald-500/50" : score >= 60 ? "text-amber-400 border-amber-500/50" : "text-rose-400 border-rose-500/50";
+    score >= 80
+      ? "text-emerald-400 border-emerald-500/50"
+      : score >= 60
+      ? "text-amber-400 border-amber-500/50"
+      : "text-rose-400 border-rose-500/50";
 
   return (
     <div className="min-h-screen flex flex-col bg-[#020e0c] text-slate-100 pb-28 selection:bg-emerald-500 selection:text-slate-950">
       <TopHeader />
 
       <main className="flex-1 max-w-md w-full mx-auto px-4 pt-3 space-y-4">
-        {/* Top Summary Header */}
+        {/* 1. Master Score & Room Diagnosis Header */}
         <div className="glass-panel-elevated p-4 rounded-3xl border border-emerald-500/20 shadow-xl space-y-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                Diagnosis
+                AI Feng Shui Audit
               </span>
               <span className="text-slate-600">•</span>
               <span className="text-[10px] font-mono capitalize text-slate-400">
@@ -241,49 +274,49 @@ function ResultContent({ params }: PageProps) {
                 <button
                   type="button"
                   onClick={() => setShowPaywall(true)}
-                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 transition shadow"
+                  className="flex items-center gap-1 px-2.5 py-1 rounded-full text-[10px] font-bold bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:brightness-110 transition shadow font-mono"
                 >
-                  <Unlock className="w-3 h-3" />
-                  <span>Unlock</span>
+                  <Unlock className="w-3 h-3 text-slate-950" />
+                  <span>PRO $3.99</span>
                 </button>
               )}
             </div>
           </div>
 
           <div className="flex items-center justify-between gap-3 pt-1">
-            <div className="space-y-0.5">
+            <div className="space-y-1">
               <h1 className="text-lg font-black text-white tracking-tight">
-                Room Chi Report
+                Chi Energy Status
               </h1>
-              <p className="text-[11px] text-slate-300 line-clamp-2">
+              <p className="text-[11px] text-slate-300 leading-relaxed">
                 {result.summary}
               </p>
             </div>
 
             {/* Score Ring */}
-            <div className="p-2.5 rounded-2xl glass-panel border border-emerald-500/30 text-center shrink-0">
+            <div className="p-3 rounded-2xl glass-panel border border-emerald-500/30 text-center shrink-0">
               <div className="text-[9px] uppercase tracking-wider text-slate-400 font-bold">
-                Score
+                Chi Score
               </div>
               <div className={`text-2xl font-black font-mono leading-none ${scoreBadgeBg}`}>
                 {score}
               </div>
-              <div className="text-[9px] font-mono text-emerald-300 font-bold mt-0.5">
+              <div className="text-[9px] font-mono text-emerald-300 font-bold mt-1">
                 Grade {grade}
               </div>
             </div>
           </div>
         </div>
 
-        {/* Section: #1 Biggest Problem (Always Free) */}
-        <div className="glass-panel p-4 rounded-3xl border border-rose-500/25 space-y-2.5 shadow-lg">
+        {/* 2. Critical Energy Leak #1 (Always Free) */}
+        <div className="glass-panel p-4 rounded-3xl border border-rose-500/25 space-y-2.5 shadow-lg bg-rose-950/10">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-rose-400">
               <AlertTriangle className="w-3.5 h-3.5" />
-              <span>Primary Energy Leak</span>
+              <span>#1 Critical Energy Leak</span>
             </div>
-            <span className="px-2 py-0.2 rounded-full text-[9px] font-bold bg-rose-950/80 text-rose-300 border border-rose-800">
-              Critical
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-bold bg-rose-950/80 text-rose-300 border border-rose-800">
+              Immediate Fix
             </span>
           </div>
 
@@ -297,19 +330,21 @@ function ResultContent({ params }: PageProps) {
           <div className="p-3 rounded-2xl bg-slate-950/80 border border-emerald-500/20 text-xs text-slate-200 flex items-start gap-2">
             <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
             <div className="text-[11px]">
-              <strong className="text-emerald-400 block mb-0.5">Instant Remedy:</strong>
+              <strong className="text-emerald-400 block mb-0.5 font-bold">
+                Recommended Solution:
+              </strong>
               {biggestProblem.quickFix}
             </div>
           </div>
         </div>
 
-        {/* Segmented Native Pill Tab Switcher */}
-        <div className="glass-pill p-1 rounded-2xl flex items-center gap-1 overflow-x-auto text-[11px] font-bold">
+        {/* 3. Navigation Tabs */}
+        <div className="glass-pill p-1 rounded-2xl flex items-center gap-1 text-[11px] font-bold">
           <button
             type="button"
-            onClick={() => setActiveTab("slider")}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl transition whitespace-nowrap text-center ${
-              activeTab === "slider"
+            onClick={() => setActiveTab("visual")}
+            className={`flex-1 py-1.5 px-2 rounded-xl transition whitespace-nowrap text-center ${
+              activeTab === "visual"
                 ? "bg-emerald-500 text-slate-950 shadow"
                 : "text-slate-400 hover:text-white"
             }`}
@@ -319,28 +354,24 @@ function ResultContent({ params }: PageProps) {
 
           <button
             type="button"
-            onClick={() => {
-              if (!isUnlocked) setShowPaywall(true);
-              else setActiveTab("annotated");
-            }}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl transition whitespace-nowrap flex items-center justify-center gap-1 ${
-              activeTab === "annotated"
+            onClick={() => setActiveTab("checklist")}
+            className={`flex-1 py-1.5 px-2 rounded-xl transition whitespace-nowrap text-center ${
+              activeTab === "checklist"
                 ? "bg-emerald-500 text-slate-950 shadow"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            {!isUnlocked && <Lock className="w-3 h-3 text-amber-400" />}
-            <span>Pins</span>
+            Action Plan
           </button>
 
           <button
             type="button"
             onClick={() => {
               if (!isUnlocked) setShowPaywall(true);
-              else setActiveTab("diagram");
+              else setActiveTab("floorplan");
             }}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl transition whitespace-nowrap flex items-center justify-center gap-1 ${
-              activeTab === "diagram"
+            className={`flex-1 py-1.5 px-2 rounded-xl transition whitespace-nowrap flex items-center justify-center gap-1 ${
+              activeTab === "floorplan"
                 ? "bg-emerald-500 text-slate-950 shadow"
                 : "text-slate-400 hover:text-white"
             }`}
@@ -353,88 +384,182 @@ function ResultContent({ params }: PageProps) {
             type="button"
             onClick={() => {
               if (!isUnlocked) setShowPaywall(true);
-              else setActiveTab("guide");
+              else setActiveTab("kua");
             }}
-            className={`flex-1 py-1.5 px-2.5 rounded-xl transition whitespace-nowrap flex items-center justify-center gap-1 ${
-              activeTab === "guide"
+            className={`flex-1 py-1.5 px-2 rounded-xl transition whitespace-nowrap flex items-center justify-center gap-1 ${
+              activeTab === "kua"
                 ? "bg-emerald-500 text-slate-950 shadow"
                 : "text-slate-400 hover:text-white"
             }`}
           >
             {!isUnlocked && <Lock className="w-3 h-3 text-amber-400" />}
-            <span>Kua Guide</span>
+            <span>Kua Map</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab("remedies")}
+            className={`flex-1 py-1.5 px-2 rounded-xl transition whitespace-nowrap text-center ${
+              activeTab === "remedies"
+                ? "bg-emerald-500 text-slate-950 shadow"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            Cures
           </button>
         </div>
 
-        {/* Tab Content Display */}
-        {activeTab === "slider" && (
-          <div className="space-y-6">
+        {/* Tab 1: Visual Relayout (Before / After Slider) */}
+        {activeTab === "visual" && (
+          <div className="space-y-4">
             <BeforeAfterSlider
               originalUrl={record.originalImageUrl}
               afterUrl={record.editedImageUrl}
-              isLocked={!isUnlocked}
-              onUnlockClick={() => setShowPaywall(true)}
+              isLocked={false}
             />
 
-            {/* Teaser of More Issues Found if Free/Locked */}
-            {!isUnlocked && (
-              <div className="bg-slate-900/60 p-6 rounded-3xl border border-slate-800 space-y-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <ShieldAlert className="w-4 h-4 text-amber-400" />
-                    <h4 className="text-sm font-bold text-white">
-                      Additional Issues Detected in Your Room ({result.issues.length - 1} More)
-                    </h4>
+            {/* Suggested Furniture Shifts Card */}
+            <div className="glass-panel p-4 rounded-3xl border border-emerald-500/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Furniture Relocations Made</span>
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  {result.suggestedMoves.length} moves
+                </span>
+              </div>
+
+              <div className="space-y-2">
+                {result.suggestedMoves.map((move, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-500/15 space-y-1"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-300">
+                        {move.item}
+                      </span>
+                      <span className="text-[9px] font-mono px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300">
+                        Command Position
+                      </span>
+                    </div>
+                    <div className="text-[11px] text-slate-300">
+                      <span className="text-slate-500 line-through mr-1">
+                        {move.from}
+                      </span>
+                      <span className="text-emerald-400 font-medium">
+                        ➜ {move.to}
+                      </span>
+                    </div>
+                    <p className="text-[10px] text-slate-400 pt-0.5">
+                      {move.reason}
+                    </p>
                   </div>
-                  <span className="text-xs text-amber-400 font-semibold flex items-center gap-1">
-                    <Lock className="w-3.5 h-3.5" />
-                    Locked
+                ))}
+              </div>
+            </div>
+
+            {/* Pro Teaser Banner if Free */}
+            {!isUnlocked && (
+              <div className="p-4 rounded-3xl bg-gradient-to-br from-emerald-950/60 via-slate-950 to-teal-950/40 border border-amber-500/30 space-y-3">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-1.5">
+                    <Sparkles className="w-4 h-4 text-amber-400" />
+                    <span className="text-xs font-bold text-white">
+                      Unlock Master Feng Shui Pack
+                    </span>
+                  </div>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">
+                    $3.99 Single
                   </span>
                 </div>
-
-                <div className="space-y-2.5">
-                  {result.issues.slice(1).map((issue, idx) => (
-                    <div
-                      key={idx}
-                      className="p-3.5 rounded-2xl bg-slate-950 border border-slate-800/80 flex items-center justify-between select-none filter blur-[4px] hover:blur-[3px] transition"
-                    >
-                      <div className="space-y-1">
-                        <span className="text-[10px] font-bold text-amber-400 uppercase">
-                          {issue.severity} Issue
-                        </span>
-                        <div className="text-xs font-bold text-white">
-                          {issue.title}
-                        </div>
-                      </div>
-                      <ChevronRight className="w-4 h-4 text-slate-500" />
-                    </div>
-                  ))}
-                </div>
-
-                <div className="text-center pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setShowPaywall(true)}
-                    className="px-6 py-3 rounded-2xl text-xs font-bold bg-gradient-to-r from-emerald-500 to-teal-500 text-slate-950 hover:from-emerald-400 shadow-xl shadow-emerald-950/60 transition active:scale-95"
-                  >
-                    Unlock All {result.issues.length} Issues & Cures ($3.99)
-                  </button>
-                </div>
+                <p className="text-[11px] text-slate-300 leading-relaxed">
+                  Includes 2D architectural blueprint vectors, personal Kua directions, all {result.issues.length} detected hazards, and printable PDF audit report.
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setShowPaywall(true)}
+                  className="w-full py-3 rounded-2xl font-bold text-xs bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:brightness-110 flex items-center justify-center gap-1.5 shadow-lg shadow-amber-950"
+                >
+                  <Unlock className="w-3.5 h-3.5" />
+                  <span>Unlock Full Analysis ($3.99)</span>
+                </button>
               </div>
             )}
           </div>
         )}
 
-        {/* Tab 2: Annotated Photo (Paid) */}
-        {activeTab === "annotated" && isUnlocked && (
-          <AnnotatedPhoto
-            imageUrl={record.originalImageUrl}
-            issues={result.issues}
-          />
+        {/* Tab 2: Interactive Priority Action Checklist */}
+        {activeTab === "checklist" && (
+          <div className="space-y-4">
+            <div className="glass-panel p-4 rounded-3xl border border-emerald-500/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>Actionable Harmonization Plan</span>
+                </span>
+                <span className="text-[10px] font-mono text-emerald-400">
+                  {Object.values(completedSteps).filter(Boolean).length} / {result.issues.length} Done
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                {result.issues.map((issue, idx) => {
+                  const isDone = !!completedSteps[issue.id];
+                  return (
+                    <div
+                      key={issue.id}
+                      onClick={() => toggleStep(issue.id)}
+                      className={`p-3.5 rounded-2xl border transition cursor-pointer flex items-start gap-3 ${
+                        isDone
+                          ? "bg-emerald-950/40 border-emerald-500/50 opacity-80"
+                          : "bg-slate-950/70 border-slate-800 hover:border-emerald-500/30"
+                      }`}
+                    >
+                      <div
+                        className={`w-5 h-5 rounded-lg flex items-center justify-center shrink-0 mt-0.5 transition ${
+                          isDone
+                            ? "bg-emerald-500 text-slate-950 font-bold"
+                            : "border border-slate-600 bg-slate-900"
+                        }`}
+                      >
+                        {isDone && <Check className="w-3.5 h-3.5 stroke-[3]" />}
+                      </div>
+
+                      <div className="space-y-1 flex-1">
+                        <div className="flex items-center justify-between">
+                          <span
+                            className={`text-xs font-bold ${
+                              isDone ? "line-through text-slate-400" : "text-white"
+                            }`}
+                          >
+                            {issue.title}
+                          </span>
+                          <span
+                            className={`text-[9px] font-bold uppercase px-1.5 py-0.2 rounded ${
+                              issue.severity === "critical"
+                                ? "bg-rose-950/80 text-rose-300"
+                                : "bg-amber-950/80 text-amber-300"
+                            }`}
+                          >
+                            {issue.severity}
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-slate-300 leading-relaxed">
+                          {issue.fix}
+                        </p>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
         )}
 
-        {/* Tab 3: Floor Plan Diagram (Paid) */}
-        {activeTab === "diagram" && isUnlocked && (
+        {/* Tab 3: 2D Layout & Chi Vectors (Paid) */}
+        {activeTab === "floorplan" && isUnlocked && (
           <FloorPlanDiagram
             beforeSvg={result.svgLayoutDiagram?.beforeSvg || record.svgBefore || ""}
             afterSvg={result.svgLayoutDiagram?.afterSvg || record.svgAfter || ""}
@@ -442,8 +567,8 @@ function ResultContent({ params }: PageProps) {
           />
         )}
 
-        {/* Tab 4: Lucky Guide & Kua (Paid) */}
-        {activeTab === "guide" && isUnlocked && (
+        {/* Tab 4: Kua Map & Five Elements (Paid) */}
+        {activeTab === "kua" && isUnlocked && (
           <LuckyGuide
             primaryElement={result.luckyGuide.primaryElement}
             luckyColors={result.luckyGuide.luckyColors}
@@ -452,6 +577,62 @@ function ResultContent({ params }: PageProps) {
             decorSuggestions={result.luckyGuide.decorSuggestions}
           />
         )}
+
+        {/* Tab 5: Cures & Curated Decor */}
+        {activeTab === "remedies" && (
+          <div className="space-y-3">
+            <div className="glass-panel p-4 rounded-3xl border border-emerald-500/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <ShoppingBag className="w-4 h-4 text-emerald-400" />
+                  <span>Personalized Energy Cures</span>
+                </span>
+                <span className="text-[10px] text-slate-400">
+                  Targeted Elements
+                </span>
+              </div>
+
+              <div className="space-y-3">
+                {result.luckyGuide.decorSuggestions.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="p-3.5 rounded-2xl bg-slate-950/70 border border-emerald-500/20 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-emerald-300">
+                        {item.item}
+                      </span>
+                      <span className="text-[9px] uppercase font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
+                        {item.element} Element
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-slate-300">
+                      <strong className="text-slate-400">Placement:</strong>{" "}
+                      {item.placement}
+                    </div>
+
+                    <p className="text-[10px] text-slate-400 leading-relaxed">
+                      {item.purpose}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Quick Rescan or Re-check */}
+        <div className="pt-2 flex items-center justify-center">
+          <button
+            type="button"
+            onClick={() => router.push("/")}
+            className="flex items-center gap-1.5 text-xs text-slate-400 hover:text-emerald-300 transition py-2"
+          >
+            <RotateCcw className="w-3.5 h-3.5" />
+            <span>Scan Another Room</span>
+          </button>
+        </div>
       </main>
 
       {/* Paywall Modal */}

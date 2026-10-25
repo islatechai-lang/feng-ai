@@ -2,14 +2,12 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import Image from "next/image";
 import {
   Camera,
   Upload,
   Sparkles,
   Compass,
   ArrowRight,
-  ChevronRight,
   ShieldCheck,
   CheckCircle2,
   AlertCircle,
@@ -18,12 +16,13 @@ import {
   Coins,
   Briefcase,
   Heart,
+  ChevronRight,
+  Zap,
 } from "lucide-react";
 import { TopHeader } from "@/components/TopHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { CompassPicker } from "@/components/CompassPicker";
 import { compressImage } from "@/lib/image/compress";
-import { SAMPLE_ROOMS, SampleRoom } from "@/lib/sample-data";
 import { RoomType, CompassDirection, FengShuiGoal } from "@/types";
 
 export default function NativeAppHome() {
@@ -31,7 +30,6 @@ export default function NativeAppHome() {
 
   // Upload & Form State
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
-  const [selectedPresetName, setSelectedPresetName] = useState<string | null>(null);
   const [roomType, setRoomType] = useState<RoomType>("bedroom");
   const [doorDirection, setDoorDirection] = useState<CompassDirection>("SW");
   const [goal, setGoal] = useState<FengShuiGoal>("sleep");
@@ -54,23 +52,12 @@ export default function NativeAppHome() {
       setErrorMsg(null);
       const compressed = await compressImage(file, 1536, 0.85);
       setImageDataUrl(compressed.dataUrl);
-      setSelectedPresetName(null);
       setActiveStep(1);
     } catch {
       setErrorMsg("Failed to process image. Please try another.");
     } finally {
       setIsProcessingImage(false);
     }
-  };
-
-  const handlePresetSelect = (preset: SampleRoom) => {
-    setImageDataUrl(preset.previewUrl);
-    setSelectedPresetName(preset.name);
-    setRoomType(preset.roomType);
-    setDoorDirection(preset.doorDirection);
-    setGoal(preset.goal);
-    if (preset.birthYear) setBirthYear(preset.birthYear.toString());
-    setActiveStep(1);
   };
 
   const startAnalysis = async () => {
@@ -93,7 +80,7 @@ export default function NativeAppHome() {
       });
 
       if (!response.ok) {
-        throw new Error("Analysis failed. Please try again.");
+        throw new Error("Analysis failed. Please check your photo and try again.");
       }
 
       const data = await response.json();
@@ -136,22 +123,22 @@ export default function NativeAppHome() {
     <div className="min-h-screen flex flex-col bg-[#020e0c] text-slate-100 pb-28 selection:bg-emerald-500 selection:text-slate-950">
       <TopHeader />
 
-      <main className="flex-1 max-w-md w-full mx-auto px-4 pt-4 space-y-6">
+      <main className="flex-1 max-w-md w-full mx-auto px-4 pt-3 space-y-5">
         {/* Subtle Ambient Light Orb behind scanner */}
         <div className="absolute top-16 left-1/2 -translate-x-1/2 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* 1. Main Native Studio Card (Scanner) */}
         {!imageDataUrl ? (
-          <div className="relative glass-panel-elevated rounded-3xl p-6 text-center space-y-5 border border-emerald-500/20 shadow-2xl overflow-hidden">
+          <div className="relative glass-panel-elevated rounded-3xl p-6 text-center space-y-6 border border-emerald-500/20 shadow-2xl overflow-hidden">
             <div className="space-y-1.5">
               <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
                 Spatial Chi AI
               </span>
               <h1 className="text-2xl font-black tracking-tight text-white">
-                Scan Your Room
+                Scan Your Space
               </h1>
               <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-                Snap a photo to unlock your Feng Shui score, Command Position fixes, and an AI-rearranged layout.
+                Take a photo of your bedroom, desk, or living room to uncover your Feng Shui energy flow and get an authentic AI redesign.
               </p>
             </div>
 
@@ -196,32 +183,32 @@ export default function NativeAppHome() {
 
               <label
                 htmlFor="gallery-input"
-                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full glass-pill text-xs font-semibold text-slate-300 hover:text-white cursor-pointer active:scale-95 transition-all"
+                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full glass-pill text-xs font-semibold text-slate-300 hover:text-white cursor-pointer active:scale-95 transition-all border border-emerald-500/20"
               >
                 <Upload className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Choose from Library</span>
+                <span>Upload from Gallery</span>
               </label>
 
               {isProcessingImage && (
                 <p className="text-xs text-emerald-400 mt-2 animate-pulse font-medium">
-                  Optimizing photo...
+                  Optimizing photo resolution...
                 </p>
               )}
             </div>
 
-            {/* Feature highlights */}
-            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-emerald-500/10 text-[10px] text-slate-400">
-              <div className="flex flex-col items-center gap-1">
-                <span className="font-bold text-slate-200">Instant</span>
-                <span>0-100 Score</span>
+            {/* Quick Benefits Checklist */}
+            <div className="grid grid-cols-3 gap-2 pt-3 border-t border-emerald-500/15 text-[10px] text-slate-300">
+              <div className="p-2 rounded-2xl bg-slate-950/50 border border-emerald-500/10 flex flex-col items-center gap-1">
+                <span className="font-bold text-white">0-100</span>
+                <span className="text-slate-400">Chi Score</span>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="font-bold text-slate-200">Command</span>
-                <span>Position Fix</span>
+              <div className="p-2 rounded-2xl bg-slate-950/50 border border-emerald-500/10 flex flex-col items-center gap-1">
+                <span className="font-bold text-white">Command</span>
+                <span className="text-slate-400">Position Fix</span>
               </div>
-              <div className="flex flex-col items-center gap-1">
-                <span className="font-bold text-slate-200">AI Visual</span>
-                <span>Rearranged Room</span>
+              <div className="p-2 rounded-2xl bg-slate-950/50 border border-emerald-500/10 flex flex-col items-center gap-1">
+                <span className="font-bold text-white">AI Visual</span>
+                <span className="text-slate-400">Relayout</span>
               </div>
             </div>
           </div>
@@ -238,20 +225,20 @@ export default function NativeAppHome() {
               />
               <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-[10px] font-bold text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                <span>{selectedPresetName || "Photo Ready"}</span>
+                <span>Your Room Photo</span>
               </div>
               <button
                 type="button"
                 onClick={() => setImageDataUrl(null)}
-                className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-slate-950/80 text-[10px] text-slate-300 hover:text-white"
+                className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-slate-950/80 text-[10px] font-semibold text-slate-300 hover:text-white border border-slate-700"
               >
-                Change
+                Retake
               </button>
             </div>
 
             {/* Step Indicators */}
             <div className="flex items-center justify-between text-xs font-semibold border-b border-emerald-500/15 pb-2">
-              <span className="text-emerald-300">
+              <span className="text-emerald-300 font-bold">
                 Configure Room Context
               </span>
               <span className="text-slate-400 text-[11px]">
@@ -263,14 +250,14 @@ export default function NativeAppHome() {
             {activeStep === 1 && (
               <div className="space-y-3">
                 <label className="text-xs font-bold text-slate-200">
-                  What kind of space is this?
+                  What space are you harmonizing?
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { id: "bedroom", label: "Bedroom", sub: "Bed & sleep Chi" },
-                    { id: "office", label: "Work Desk", sub: "Career authority" },
-                    { id: "living_room", label: "Living Room", sub: "Family harmony" },
-                    { id: "kitchen", label: "Kitchen / Dining", sub: "Fire/Water balance" },
+                    { id: "bedroom", label: "Bedroom", sub: "Sleep & Aura Rejuvenation" },
+                    { id: "office", label: "Work Desk", sub: "Authority & Focus" },
+                    { id: "living_room", label: "Living Room", sub: "Family Chi & Social Flow" },
+                    { id: "kitchen", label: "Dining / Kitchen", sub: "Nourishment & Harmony" },
                   ].map((item) => (
                     <button
                       key={item.id}
@@ -291,9 +278,9 @@ export default function NativeAppHome() {
                 <button
                   type="button"
                   onClick={() => setActiveStep(2)}
-                  className="w-full mt-2 py-3 rounded-2xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center justify-center gap-1.5 shadow"
+                  className="w-full mt-2 py-3.5 rounded-2xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center justify-center gap-1.5 shadow"
                 >
-                  <span>Continue to Door Direction</span>
+                  <span>Continue to Door Heading</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -318,7 +305,7 @@ export default function NativeAppHome() {
                   <button
                     type="button"
                     onClick={() => setActiveStep(3)}
-                    className="flex-1 py-3 rounded-2xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center justify-center gap-1.5 shadow"
+                    className="flex-1 py-3.5 rounded-2xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center justify-center gap-1.5 shadow"
                   >
                     <span>Continue to Intention</span>
                     <ArrowRight className="w-3.5 h-3.5" />
@@ -331,11 +318,11 @@ export default function NativeAppHome() {
             {activeStep === 3 && (
               <div className="space-y-4">
                 <label className="text-xs font-bold text-slate-200">
-                  What energy do you want to cultivate?
+                  What energy intention do you want to elevate?
                 </label>
                 <div className="grid grid-cols-2 gap-2">
                   {[
-                    { id: "sleep", label: "Rest & Calm", icon: Moon, color: "text-indigo-400" },
+                    { id: "sleep", label: "Restful Sleep", icon: Moon, color: "text-indigo-400" },
                     { id: "money", label: "Wealth & Cash", icon: Coins, color: "text-amber-400" },
                     { id: "career", label: "Career & Focus", icon: Briefcase, color: "text-emerald-400" },
                     { id: "love", label: "Love & Harmony", icon: Heart, color: "text-rose-400" },
@@ -362,17 +349,17 @@ export default function NativeAppHome() {
 
                 <div className="space-y-1.5 pt-1">
                   <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
-                    <span>Birth Year (Optional for Personal Kua)</span>
-                    <span className="text-slate-500">e.g. 1996</span>
+                    <span>Birth Year (Calculates Personal Kua Direction)</span>
+                    <span className="text-slate-500">Optional</span>
                   </label>
                   <input
                     type="number"
                     min="1930"
                     max="2030"
-                    placeholder="1996"
+                    placeholder="e.g. 1996"
                     value={birthYear}
                     onChange={(e) => setBirthYear(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-emerald-500/20 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-400"
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-emerald-500/20 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-400 font-mono"
                   />
                 </div>
 
@@ -391,7 +378,7 @@ export default function NativeAppHome() {
                     className="flex-1 py-3.5 rounded-2xl font-bold text-xs bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200 text-slate-950 hover:brightness-110 flex items-center justify-center gap-2 shadow-xl shadow-emerald-950 disabled:opacity-50"
                   >
                     <Sparkles className="w-4 h-4 text-slate-950" />
-                    <span>{isAnalyzing ? "Consulting Feng Shui AI..." : "Harmonize My Space ✨"}</span>
+                    <span>{isAnalyzing ? "AI Master Is Analyzing Room..." : "Analyze & Redesign Room ✨"}</span>
                   </button>
                 </div>
               </div>
@@ -406,44 +393,7 @@ export default function NativeAppHome() {
           </div>
         )}
 
-        {/* 2. 1-Tap Sample Presets (Smooth Horizontal Carousel) */}
-        <div className="space-y-2.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-              <span>Instant Sample Rooms</span>
-            </span>
-            <span className="text-[10px] text-slate-500">1-Tap Demo</span>
-          </div>
-
-          <div className="grid grid-cols-3 gap-2">
-            {SAMPLE_ROOMS.map((sample) => (
-              <button
-                key={sample.id}
-                type="button"
-                onClick={() => handlePresetSelect(sample)}
-                className="group text-left glass-pill p-2 rounded-2xl hover:border-emerald-500/40 transition active:scale-95 space-y-1.5"
-              >
-                <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border border-emerald-500/10">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={sample.previewUrl}
-                    alt={sample.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                  <div className="absolute top-1 left-1 px-1.5 py-0.2 rounded bg-slate-950/80 text-[8px] font-mono text-emerald-300">
-                    {sample.score} pts
-                  </div>
-                </div>
-                <div className="text-[10px] font-bold text-white group-hover:text-emerald-300 truncate">
-                  {sample.name.split(" ")[0]} {sample.name.split(" ")[1]}
-                </div>
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* 3. Today's Chi Insight Card */}
+        {/* 2. Today's Chi Insight Card */}
         <div className="glass-panel rounded-3xl p-4 flex items-start gap-3.5 border border-emerald-500/15">
           <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 text-emerald-400">
             <Flame className="w-5 h-5 text-amber-400" />
@@ -451,19 +401,19 @@ export default function NativeAppHome() {
           <div className="space-y-0.5">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-bold text-white">
-                Daily Chi Atmosphere
+                Daily Chi Principle
               </span>
               <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">
-                Auspicious
+                Command Rule
               </span>
             </div>
             <p className="text-[11px] text-slate-400 leading-relaxed">
-              Open your morning windows before 11:00 AM to flush out night-stagnant Si Chi and welcome vibrant Yang energy.
+              Never place your bed or desk directly in line with the entryway. The rushing Chi causes subconscious alertness and degrades deep sleep.
             </p>
           </div>
         </div>
 
-        {/* 4. Quick Nav to Standalone Compass */}
+        {/* 3. Quick Nav to Standalone Compass */}
         <button
           type="button"
           onClick={() => router.push("/compass")}
@@ -478,7 +428,7 @@ export default function NativeAppHome() {
                 Live Feng Shui Compass Tool
               </div>
               <div className="text-[10px] text-slate-400">
-                Measure your doorway heading in real-time
+                Measure doorway heading with your phone gyro
               </div>
             </div>
           </div>
