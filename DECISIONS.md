@@ -55,7 +55,18 @@ This document records technical choices, deviations, and improvements made while
 
 - **Decision:** Integrated Google Gemini direct API (`gemini-3.1-flash-lite` for multimodal vision/reasoning and `gemini-2.5-flash-image` / `gemini-3.1-flash-lite-image` for photorealistic image relayout).
 - **Relayout Inpainting:** Takes the user's actual room photo as base64 and transforms the space into a tranquil Feng Shui Command Position layout, preserving wall architecture while rearranging furniture and introducing 5-element remedies.
-- **Native Mobile Shell:** Optimized exclusively for mobile apps (e.g., Median.co packaging), with floating bottom navigation, tactile camera/upload triggers, interactive 3-step action plan checklist, and removal of cluttered instant sample presets.
+
+---
+
+## 7. 360° Circular Room Scanner & Interactive Three.js 3D Room Studio
+
+- **Problem:** Users found compass codes (SE, NW, E) confusing and wanted to capture the entire room in 360° and navigate/rearrange furniture in interactive 3D.
+- **Decision:**
+  1. **360° Spatial Scanner (`RoomScanner360.tsx`):** Circular HUD interface with 4 quadrant checkpoints (Doorway, Right Wall, Bed/Desk, Left Wall) utilizing device gyroscope orientation to guide users in turning 360° around their room.
+  2. **Interactive 3D Room Studio (`Room3DViewer.tsx`):** Powered by Three.js WebGL. Users can touch/drag to rotate 360° around their room, switch camera viewpoints (Orbit, Top-Down, Door View), and test moving furniture in 3D.
+  3. **Live 3D Score Simulation:** Toggling between the "Command Position" (94 pts) and "Coffin Position" (54 pts) dynamically animates the 3D furniture and recalculates the Chi score in real time.
+  4. **3D Chi Flow Visualization:** Renders green curving particles for healthy Sheng Chi and red laser beams for harsh doorway Sha Chi wind.
+  5. **Human Spatial Translation (`human-terms.ts`):** Replaces cryptic compass jargon with everyday room landmarks ("Far-Left Wealth Corner", "Back-Right Love Corner", "Solid Wall behind Headboard") relative to the entrance door.
   - Built an interactive rotating SVG compass rose (`src/components/CompassPicker.tsx`) displaying all 8 cardinal/intercardinal points (N, NE, E, SE, S, SW, W, NW).
   - Implemented HTML5 `deviceorientation` sensor integration with iOS 13+ `DeviceOrientationEvent.requestPermission()` handling.
   - Added an "I don't know" option that defaults to Tai Chi central balance.

@@ -2,6 +2,7 @@
 
 import { DecorSuggestion, FiveElement, KuaInfo, CompassDirection } from "@/types";
 import { Sparkles, Compass, ShieldCheck, Palette, ShoppingBag, Leaf, Droplet, Flame, Mountain, CircleDot } from "lucide-react";
+import { getHumanSpatialZone } from "@/lib/fengshui/human-terms";
 
 interface LuckyGuideProps {
   primaryElement: FiveElement;
@@ -30,7 +31,7 @@ export function LuckyGuide({
 
   return (
     <div className="space-y-4">
-      {/* 1. Kua Number & Personal Energy (if available) */}
+      {/* 1. Kua Number & Personal Energy */}
       {kuaInfo && (
         <div className="p-4 rounded-3xl glass-panel-elevated border border-emerald-500/25 shadow-xl space-y-3">
           <div className="flex items-center gap-3">
@@ -53,147 +54,154 @@ export function LuckyGuide({
           </div>
 
           <p className="text-[11px] text-emerald-200/90 leading-tight p-2.5 rounded-2xl bg-emerald-950/40 border border-emerald-500/20">
-            💡 <strong>Actionable Rule:</strong> Sleep with the crown of your head facing <strong>{kuaInfo.luckyDirections.tianYi} (Tian Yi)</strong> for healing sleep, or face <strong>{kuaInfo.luckyDirections.shengChi} (Sheng Chi)</strong> at your desk for career authority.
+            💡 <strong>Simple Rule:</strong> Point the head of your bed toward your{" "}
+            <strong>{getHumanSpatialZone(kuaInfo.luckyDirections.tianYi).humanTitle} ({kuaInfo.luckyDirections.tianYi})</strong> for peaceful sleep, and face{" "}
+            <strong>{getHumanSpatialZone(kuaInfo.luckyDirections.shengChi).humanTitle} ({kuaInfo.luckyDirections.shengChi})</strong> while working at your desk.
           </p>
 
-          {/* 4 Lucky Directions Breakdown */}
+          {/* 4 Lucky Directions Breakdown with Human Descriptions */}
           <div className="grid grid-cols-2 gap-2 pt-1">
-            <div className="p-2.5 rounded-2xl glass-pill">
+            <div className="p-3 rounded-2xl glass-pill space-y-1">
               <div className="text-[9px] font-bold uppercase tracking-wider text-amber-400">
-                Sheng Chi (Wealth)
+                Wealth Direction
               </div>
-              <div className="text-base font-black text-white font-mono">
-                {kuaInfo.luckyDirections.shengChi}
+              <div className="text-sm font-black text-white">
+                {getHumanSpatialZone(kuaInfo.luckyDirections.shengChi).humanTitle}
               </div>
-              <div className="text-[9px] text-slate-400">Vitality & money growth</div>
+              <div className="text-[10px] font-mono text-emerald-400">
+                Compass: {kuaInfo.luckyDirections.shengChi}
+              </div>
+              <div className="text-[9px] text-slate-400">
+                {getHumanSpatialZone(kuaInfo.luckyDirections.shengChi).lifeArea}
+              </div>
             </div>
 
-            <div className="p-2.5 rounded-2xl glass-pill">
+            <div className="p-3 rounded-2xl glass-pill space-y-1">
               <div className="text-[9px] font-bold uppercase tracking-wider text-teal-400">
-                Tian Yi (Health)
+                Sleep & Health
               </div>
-              <div className="text-base font-black text-white font-mono">
-                {kuaInfo.luckyDirections.tianYi}
+              <div className="text-sm font-black text-white">
+                {getHumanSpatialZone(kuaInfo.luckyDirections.tianYi).humanTitle}
               </div>
-              <div className="text-[9px] text-slate-400">Healing & calm sleep</div>
+              <div className="text-[10px] font-mono text-emerald-400">
+                Compass: {kuaInfo.luckyDirections.tianYi}
+              </div>
+              <div className="text-[9px] text-slate-400">
+                {getHumanSpatialZone(kuaInfo.luckyDirections.tianYi).lifeArea}
+              </div>
             </div>
 
-            <div className="p-2.5 rounded-2xl glass-pill">
+            <div className="p-3 rounded-2xl glass-pill space-y-1">
               <div className="text-[9px] font-bold uppercase tracking-wider text-rose-400">
-                Yan Nian (Love)
+                Love & Romance
               </div>
-              <div className="text-base font-black text-white font-mono">
-                {kuaInfo.luckyDirections.yanNian}
+              <div className="text-sm font-black text-white">
+                {getHumanSpatialZone(kuaInfo.luckyDirections.yanNian).humanTitle}
               </div>
-              <div className="text-[9px] text-slate-400">Romance & harmony</div>
+              <div className="text-[10px] font-mono text-emerald-400">
+                Compass: {kuaInfo.luckyDirections.yanNian}
+              </div>
+              <div className="text-[9px] text-slate-400">
+                {getHumanSpatialZone(kuaInfo.luckyDirections.yanNian).lifeArea}
+              </div>
             </div>
 
-            <div className="p-2.5 rounded-2xl glass-pill">
+            <div className="p-3 rounded-2xl glass-pill space-y-1">
               <div className="text-[9px] font-bold uppercase tracking-wider text-indigo-400">
-                Fu Wei (Peace)
+                Peace & Focus
               </div>
-              <div className="text-base font-black text-white font-mono">
-                {kuaInfo.luckyDirections.fuWei}
+              <div className="text-sm font-black text-white">
+                {getHumanSpatialZone(kuaInfo.luckyDirections.fuWei).humanTitle}
               </div>
-              <div className="text-[9px] text-slate-400">Clarity & mental stillness</div>
+              <div className="text-[10px] font-mono text-emerald-400">
+                Compass: {kuaInfo.luckyDirections.fuWei}
+              </div>
+              <div className="text-[9px] text-slate-400">
+                {getHumanSpatialZone(kuaInfo.luckyDirections.fuWei).lifeArea}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* 2. Elements & Lucky Colors */}
-      <div className="space-y-3">
-        {/* Primary Element Card */}
-        <div className="p-4 rounded-3xl glass-panel border border-emerald-500/15 space-y-2">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-400">
-            <PrimaryIcon className="w-3.5 h-3.5" />
-            <span>Harmonizing Element</span>
-          </div>
-
-          <h4 className="text-sm font-black text-white capitalize">
-            {primaryElement} Element Sanctuary
-          </h4>
-
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Your space and goal benefit most from active {primaryElement} cultivation. Incorporate organic textures, rounded organic lines, and natural living elements to circulate vibrant Sheng Chi.
-          </p>
-
-          <div className="flex items-center gap-2 pt-1 text-xs">
-            <span className="text-[11px] font-semibold text-slate-300">Auspicious Sectors:</span>
-            <div className="flex gap-1">
-              {luckyDirections.map((dir) => (
-                <span
-                  key={dir}
-                  className="px-2 py-0.2 rounded-lg text-[10px] font-mono font-bold bg-slate-900 text-emerald-300 border border-emerald-500/30"
-                >
-                  {dir}
-                </span>
-              ))}
+      {/* 2. Primary Element & Color Balance */}
+      <div className="p-4 rounded-3xl glass-panel border border-emerald-500/20 space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <PrimaryIcon className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-white">
+                Primary Element: <span className="capitalize text-emerald-400">{primaryElement}</span>
+              </h4>
+              <p className="text-[10px] text-slate-400">
+                Natural energy signature needed to balance this room
+              </p>
             </div>
           </div>
+          <Palette className="w-4 h-4 text-slate-400" />
         </div>
 
-        {/* Lucky Colors Palette */}
-        <div className="p-4 rounded-3xl glass-panel border border-emerald-500/15 space-y-2">
-          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-teal-400">
-            <Palette className="w-3.5 h-3.5" />
-            <span>Recommended Accent Palette</span>
-          </div>
-
-          <p className="text-xs text-slate-300 leading-relaxed">
-            Incorporate these tones in throw pillows, ceramics, curtains, and lighting shades:
-          </p>
-
-          <div className="flex flex-wrap gap-1.5 pt-0.5">
-            {luckyColors.map((color) => (
-              <div
-                key={color}
-                className="px-2.5 py-1 rounded-xl glass-pill flex items-center gap-1.5 text-[11px] font-medium text-slate-200"
+        {/* Lucky Colors Pill List */}
+        <div>
+          <span className="text-[10px] uppercase font-bold text-slate-400 tracking-wider block mb-1.5">
+            Recommended Harmonizing Accents
+          </span>
+          <div className="flex flex-wrap gap-1.5">
+            {luckyColors.map((color, idx) => (
+              <span
+                key={idx}
+                className="px-3 py-1 rounded-full text-xs font-semibold glass-pill text-white"
               >
-                <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 shadow-sm" />
-                <span>{color}</span>
-              </div>
+                {color}
+              </span>
             ))}
           </div>
         </div>
       </div>
 
-      {/* 3. Decor / Shopping Suggestions */}
-      <div className="space-y-2.5 pt-1">
+      {/* 3. Curated Decor Shopping List */}
+      <div className="p-4 rounded-3xl glass-panel border border-emerald-500/20 space-y-3">
         <div className="flex items-center justify-between">
-          <h4 className="text-xs font-bold text-white flex items-center gap-1.5">
-            <ShoppingBag className="w-3.5 h-3.5 text-emerald-400" />
-            <span>Auspicious Decor Enhancers</span>
-          </h4>
-          <span className="text-[10px] text-slate-500">Generic items • No affiliates</span>
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-xl bg-emerald-500/10 flex items-center justify-center text-emerald-400">
+              <ShoppingBag className="w-4 h-4" />
+            </div>
+            <div>
+              <h4 className="text-xs font-bold text-white">
+                Recommended Chi Enhancers
+              </h4>
+              <p className="text-[10px] text-slate-400">
+                Targeted cures for your space
+              </p>
+            </div>
+          </div>
+          <span className="text-[10px] font-mono text-emerald-400">
+            {decorSuggestions.length} items
+          </span>
         </div>
 
-        <div className="space-y-2">
-          {decorSuggestions.map((item, index) => (
+        <div className="space-y-2 pt-1">
+          {decorSuggestions.map((item, idx) => (
             <div
-              key={index}
-              className="p-3.5 rounded-2xl glass-panel border border-emerald-500/15 space-y-1.5"
+              key={idx}
+              className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-500/10 space-y-1"
             >
               <div className="flex items-center justify-between">
-                <span className="px-2 py-0.2 rounded text-[9px] font-bold uppercase tracking-wider bg-slate-900 text-slate-300 capitalize border border-slate-700">
-                  {item.element} element
+                <span className="text-xs font-bold text-emerald-300">
+                  {item.item}
                 </span>
-                <span className="text-[10px] text-emerald-400 font-medium">
-                  {item.color}
+                <span className="text-[9px] uppercase font-bold px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300">
+                  {item.element}
                 </span>
               </div>
-
-              <h5 className="text-xs font-bold text-white leading-tight">
-                {item.item}
-              </h5>
-
-              <p className="text-[11px] text-slate-400 leading-relaxed">
+              <div className="text-[11px] text-slate-300">
+                <strong className="text-slate-400">Where to put it:</strong> {item.placement}
+              </div>
+              <p className="text-[10px] text-slate-400 leading-relaxed">
                 {item.purpose}
               </p>
-
-              <div className="text-[10px] text-teal-300 font-medium pt-0.5 border-t border-emerald-500/10">
-                <strong>Placement:</strong> {item.placement}
-              </div>
             </div>
           ))}
         </div>

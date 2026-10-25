@@ -5,6 +5,7 @@ import { useSearchParams, useRouter } from "next/navigation";
 import confetti from "canvas-confetti";
 import { TopHeader } from "@/components/TopHeader";
 import { BottomNav } from "@/components/BottomNav";
+import { Room3DViewer } from "@/components/Room3DViewer";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { AnnotatedPhoto } from "@/components/AnnotatedPhoto";
 import { FloorPlanDiagram } from "@/components/FloorPlanDiagram";
@@ -12,6 +13,7 @@ import { LuckyGuide } from "@/components/LuckyGuide";
 import { PaywallModal } from "@/components/PaywallModal";
 import { ShareCardModal } from "@/components/ShareCardModal";
 import { FengShuiResult, IssueSeverity } from "@/types";
+import { getHumanSpatialZone, SPATIAL_ZONES, COMMAND_POSITION_PLAIN_ENGLISH } from "@/lib/fengshui/human-terms";
 import {
   Sparkles,
   Lock,
@@ -34,6 +36,9 @@ import {
   Droplet,
   Mountain,
   CircleDot,
+  Box,
+  MapPin,
+  Move,
 } from "lucide-react";
 
 interface PageProps {
@@ -49,7 +54,10 @@ function ResultContent({ params }: PageProps) {
   // Result state
   const [record, setRecord] = useState<any>(null);
   const [isUnlocked, setIsUnlocked] = useState(false);
-  const [activeTab, setActiveTab] = useState<"visual" | "checklist" | "floorplan" | "kua" | "remedies">("visual");
+  const [activeTab, setActiveTab] = useState<"3d" | "visual" | "checklist" | "zones" | "floorplan" | "remedies">("3d");
+
+  // Dynamic 3D score tracker
+  const [simulatedScore, setSimulatedScore] = useState<number | null>(null);
 
   // Interactive Checklist State
   const [completedSteps, setCompletedSteps] = useState<Record<string, boolean>>({});
@@ -83,7 +91,6 @@ function ResultContent({ params }: PageProps) {
       }
       setRecord(loaded);
     } else {
-      // High quality fallback demo
       const fallbackRecord = {
         id: analysisId,
         roomType: "bedroom",
@@ -97,7 +104,7 @@ function ResultContent({ params }: PageProps) {
         result: {
           score: 54,
           grade: "D",
-          summary: "Your space suffers from direct doorway Sha Chi alignment ('Coffin Position') and an unshielded reflective mirror facing the sleeping area.",
+          summary: "Your bed is placed in the 'Coffin Line' directly in front of the door. Shifting into the Command Position will immediately restore restorative sleep.",
           biggestProblem: {
             title: "Critical: The 'Coffin Position' (Bed in Line with Door)",
             description: "Your bed is placed directly in line with the entryway, with the feet pointing straight out the door. In classical Feng Shui, rushing energy (Sha Chi) strikes your body while sleeping, preventing restorative deep sleep.",
@@ -164,7 +171,7 @@ function ResultContent({ params }: PageProps) {
               {
                 item: "Air-purifying Jade Plant",
                 element: "wood",
-                placement: "South-East Wealth Corner",
+                placement: "Far-Left Wealth Corner",
                 purpose: "Attracts prosperous growth energy and cleanses indoor air toxins",
                 color: "Emerald Green",
               },
@@ -231,8 +238,8 @@ function ResultContent({ params }: PageProps) {
   }
 
   const result: FengShuiResult = record.result;
-  const score = result.score;
-  const grade = result.grade;
+  const score = simulatedScore ?? result.score;
+  const grade = score >= 90 ? "A+" : score >= 80 ? "A" : score >= 70 ? "B" : score >= 58 ? "C" : "D";
   const biggestProblem = result.biggestProblem;
 
   const scoreBadgeBg =
@@ -252,7 +259,7 @@ function ResultContent({ params }: PageProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
               <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                AI Feng Shui Audit
+                Spatial Chi Audit
               </span>
               <span className="text-slate-600">•</span>
               <span className="text-[10px] font-mono capitalize text-slate-400">
@@ -339,67 +346,82 @@ function ResultContent({ params }: PageProps) {
         </div>
 
         {/* 3. Navigation Tabs */}
-        <div className="glass-pill p-1 rounded-2xl flex items-center gap-1 text-[11px] font-bold">
+        <div className="glass-pill p-1 rounded-2xl flex items-center gap-1 text-[11px] font-bold overflow-x-auto">
+          {/* Tab 1: 3D Studio */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("3d")}
+            className={`flex-1 py-1.5 px-2.5 rounded-xl transition whitespace-nowrap flex items-center justify-center gap-1 ${
+              activeTab === "3d"
+                ? "bg-emerald-500 text-slate-950 shadow"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            <Box className="w-3.5 h-3.5" />
+            <span>3D Studio</span>
+          </button>
+
+          {/* Tab 2: Visual Before/After */}
           <button
             type="button"
             onClick={() => setActiveTab("visual")}
-            className={`flex-1 py-1.5 px-2 rounded-xl transition whitespace-nowrap text-center ${
+            className={`flex-1 py-1.5 px-2.5 rounded-xl transition whitespace-nowrap text-center ${
               activeTab === "visual"
                 ? "bg-emerald-500 text-slate-950 shadow"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            Visual Edit
+            Photo Edit
           </button>
 
+          {/* Tab 3: Action Plan */}
           <button
             type="button"
             onClick={() => setActiveTab("checklist")}
-            className={`flex-1 py-1.5 px-2 rounded-xl transition whitespace-nowrap text-center ${
+            className={`flex-1 py-1.5 px-2.5 rounded-xl transition whitespace-nowrap text-center ${
               activeTab === "checklist"
                 ? "bg-emerald-500 text-slate-950 shadow"
                 : "text-slate-400 hover:text-white"
             }`}
           >
-            Action Plan
+            Fixes
           </button>
 
+          {/* Tab 4: Room Zones (No Jargon) */}
+          <button
+            type="button"
+            onClick={() => setActiveTab("zones")}
+            className={`flex-1 py-1.5 px-2.5 rounded-xl transition whitespace-nowrap text-center ${
+              activeTab === "zones"
+                ? "bg-emerald-500 text-slate-950 shadow"
+                : "text-slate-400 hover:text-white"
+            }`}
+          >
+            Room Zones
+          </button>
+
+          {/* Tab 5: 2D Floor Plan (Pro) */}
           <button
             type="button"
             onClick={() => {
               if (!isUnlocked) setShowPaywall(true);
               else setActiveTab("floorplan");
             }}
-            className={`flex-1 py-1.5 px-2 rounded-xl transition whitespace-nowrap flex items-center justify-center gap-1 ${
+            className={`flex-1 py-1.5 px-2.5 rounded-xl transition whitespace-nowrap flex items-center justify-center gap-1 ${
               activeTab === "floorplan"
                 ? "bg-emerald-500 text-slate-950 shadow"
                 : "text-slate-400 hover:text-white"
             }`}
           >
             {!isUnlocked && <Lock className="w-3 h-3 text-amber-400" />}
-            <span>2D Layout</span>
+            <span>2D Map</span>
           </button>
 
-          <button
-            type="button"
-            onClick={() => {
-              if (!isUnlocked) setShowPaywall(true);
-              else setActiveTab("kua");
-            }}
-            className={`flex-1 py-1.5 px-2 rounded-xl transition whitespace-nowrap flex items-center justify-center gap-1 ${
-              activeTab === "kua"
-                ? "bg-emerald-500 text-slate-950 shadow"
-                : "text-slate-400 hover:text-white"
-            }`}
-          >
-            {!isUnlocked && <Lock className="w-3 h-3 text-amber-400" />}
-            <span>Kua Map</span>
-          </button>
-
+          {/* Tab 6: Cures */}
           <button
             type="button"
             onClick={() => setActiveTab("remedies")}
-            className={`flex-1 py-1.5 px-2 rounded-xl transition whitespace-nowrap text-center ${
+            className={`flex-1 py-1.5 px-2.5 rounded-xl transition whitespace-nowrap text-center ${
               activeTab === "remedies"
                 ? "bg-emerald-500 text-slate-950 shadow"
                 : "text-slate-400 hover:text-white"
@@ -409,7 +431,17 @@ function ResultContent({ params }: PageProps) {
           </button>
         </div>
 
-        {/* Tab 1: Visual Relayout (Before / After Slider) */}
+        {/* Tab 1: Interactive 3D Room Studio */}
+        {activeTab === "3d" && (
+          <div className="space-y-4">
+            <Room3DViewer
+              roomType={record.roomType}
+              onScoreChange={(newScore) => setSimulatedScore(newScore)}
+            />
+          </div>
+        )}
+
+        {/* Tab 2: Visual Relayout (Before / After Slider) */}
         {activeTab === "visual" && (
           <div className="space-y-4">
             <BeforeAfterSlider
@@ -440,7 +472,7 @@ function ResultContent({ params }: PageProps) {
                       <span className="text-xs font-bold text-emerald-300">
                         {move.item}
                       </span>
-                      <span className="text-[9px] font-mono px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300">
+                      <span className="text-[9px] font-mono px-2 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-bold">
                         Command Position
                       </span>
                     </div>
@@ -459,38 +491,10 @@ function ResultContent({ params }: PageProps) {
                 ))}
               </div>
             </div>
-
-            {/* Pro Teaser Banner if Free */}
-            {!isUnlocked && (
-              <div className="p-4 rounded-3xl bg-gradient-to-br from-emerald-950/60 via-slate-950 to-teal-950/40 border border-amber-500/30 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-1.5">
-                    <Sparkles className="w-4 h-4 text-amber-400" />
-                    <span className="text-xs font-bold text-white">
-                      Unlock Master Feng Shui Pack
-                    </span>
-                  </div>
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold">
-                    $3.99 Single
-                  </span>
-                </div>
-                <p className="text-[11px] text-slate-300 leading-relaxed">
-                  Includes 2D architectural blueprint vectors, personal Kua directions, all {result.issues.length} detected hazards, and printable PDF audit report.
-                </p>
-                <button
-                  type="button"
-                  onClick={() => setShowPaywall(true)}
-                  className="w-full py-3 rounded-2xl font-bold text-xs bg-gradient-to-r from-amber-400 to-amber-500 text-slate-950 hover:brightness-110 flex items-center justify-center gap-1.5 shadow-lg shadow-amber-950"
-                >
-                  <Unlock className="w-3.5 h-3.5" />
-                  <span>Unlock Full Analysis ($3.99)</span>
-                </button>
-              </div>
-            )}
           </div>
         )}
 
-        {/* Tab 2: Interactive Priority Action Checklist */}
+        {/* Tab 3: Interactive Priority Action Checklist */}
         {activeTab === "checklist" && (
           <div className="space-y-4">
             <div className="glass-panel p-4 rounded-3xl border border-emerald-500/20 space-y-3">
@@ -499,7 +503,7 @@ function ResultContent({ params }: PageProps) {
                   <CheckCircle2 className="w-4 h-4 text-emerald-400" />
                   <span>Actionable Harmonization Plan</span>
                 </span>
-                <span className="text-[10px] font-mono text-emerald-400">
+                <span className="text-[10px] font-mono text-emerald-400 font-bold">
                   {Object.values(completedSteps).filter(Boolean).length} / {result.issues.length} Done
                 </span>
               </div>
@@ -558,7 +562,71 @@ function ResultContent({ params }: PageProps) {
           </div>
         )}
 
-        {/* Tab 3: 2D Layout & Chi Vectors (Paid) */}
+        {/* Tab 4: Room Zones in Everyday Human Terms (No Confusing Jargon!) */}
+        {activeTab === "zones" && (
+          <div className="space-y-3">
+            <div className="glass-panel p-4 rounded-3xl border border-emerald-500/20 space-y-3">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                    <MapPin className="w-3.5 h-3.5 text-emerald-400" />
+                    <span>Everyday Room Zones</span>
+                  </span>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    Stand at your doorway looking into the room
+                  </p>
+                </div>
+                <span className="text-[9px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300">
+                  Beginner Friendly
+                </span>
+              </div>
+
+              <div className="space-y-2.5">
+                {[
+                  SPATIAL_ZONES.SE,
+                  SPATIAL_ZONES.SW,
+                  SPATIAL_ZONES.S,
+                  SPATIAL_ZONES.E,
+                  SPATIAL_ZONES.NE,
+                ].map((zone) => (
+                  <div
+                    key={zone.code}
+                    className="p-3.5 rounded-2xl bg-slate-950/70 border border-emerald-500/15 space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-white">
+                          {zone.humanTitle}
+                        </span>
+                        <span className="text-[10px] text-slate-400">
+                          ({zone.code})
+                        </span>
+                      </div>
+                      <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full border ${zone.colorPill}`}>
+                        {zone.lifeArea.split(",")[0]}
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] text-slate-300">
+                      <strong className="text-emerald-400">Where it is:</strong>{" "}
+                      {zone.roomPerspective}
+                    </div>
+
+                    <p className="text-[11px] text-slate-200 leading-relaxed">
+                      👉 <strong className="text-white">What to place here:</strong> {zone.whatToDo}
+                    </p>
+
+                    <p className="text-[10px] text-rose-300 pt-0.5">
+                      ⚠️ <strong className="text-rose-400">Avoid:</strong> {zone.whatToAvoid}
+                    </p>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 5: 2D Layout & Chi Vectors (Paid) */}
         {activeTab === "floorplan" && isUnlocked && (
           <FloorPlanDiagram
             beforeSvg={result.svgLayoutDiagram?.beforeSvg || record.svgBefore || ""}
@@ -567,18 +635,7 @@ function ResultContent({ params }: PageProps) {
           />
         )}
 
-        {/* Tab 4: Kua Map & Five Elements (Paid) */}
-        {activeTab === "kua" && isUnlocked && (
-          <LuckyGuide
-            primaryElement={result.luckyGuide.primaryElement}
-            luckyColors={result.luckyGuide.luckyColors}
-            luckyDirections={result.luckyGuide.luckyDirections}
-            kuaInfo={result.luckyGuide.kuaInfo}
-            decorSuggestions={result.luckyGuide.decorSuggestions}
-          />
-        )}
-
-        {/* Tab 5: Cures & Curated Decor */}
+        {/* Tab 6: Cures & Curated Decor */}
         {activeTab === "remedies" && (
           <div className="space-y-3">
             <div className="glass-panel p-4 rounded-3xl border border-emerald-500/20 space-y-3">
@@ -587,7 +644,7 @@ function ResultContent({ params }: PageProps) {
                   <ShoppingBag className="w-4 h-4 text-emerald-400" />
                   <span>Personalized Energy Cures</span>
                 </span>
-                <span className="text-[10px] text-slate-400">
+                <span className="text-[10px] text-slate-400 font-mono">
                   Targeted Elements
                 </span>
               </div>
@@ -608,7 +665,7 @@ function ResultContent({ params }: PageProps) {
                     </div>
 
                     <div className="text-[11px] text-slate-300">
-                      <strong className="text-slate-400">Placement:</strong>{" "}
+                      <strong className="text-slate-400">Where to place:</strong>{" "}
                       {item.placement}
                     </div>
 
@@ -622,7 +679,7 @@ function ResultContent({ params }: PageProps) {
           </div>
         )}
 
-        {/* Quick Rescan or Re-check */}
+        {/* Quick Rescan Button */}
         <div className="pt-2 flex items-center justify-center">
           <button
             type="button"

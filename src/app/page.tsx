@@ -17,13 +17,17 @@ import {
   Briefcase,
   Heart,
   ChevronRight,
-  Zap,
+  Scan,
+  Maximize2,
+  Move,
 } from "lucide-react";
 import { TopHeader } from "@/components/TopHeader";
 import { BottomNav } from "@/components/BottomNav";
 import { CompassPicker } from "@/components/CompassPicker";
+import { RoomScanner360 } from "@/components/RoomScanner360";
 import { compressImage } from "@/lib/image/compress";
 import { RoomType, CompassDirection, FengShuiGoal } from "@/types";
+import { getHumanSpatialZone, COMMAND_POSITION_PLAIN_ENGLISH } from "@/lib/fengshui/human-terms";
 
 export default function NativeAppHome() {
   const router = useRouter();
@@ -34,6 +38,9 @@ export default function NativeAppHome() {
   const [doorDirection, setDoorDirection] = useState<CompassDirection>("SW");
   const [goal, setGoal] = useState<FengShuiGoal>("sleep");
   const [birthYear, setBirthYear] = useState<string>("");
+
+  // Modals and 360 Scanner State
+  const [showScanner360, setShowScanner360] = useState(false);
 
   // Flow State
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
@@ -58,6 +65,12 @@ export default function NativeAppHome() {
     } finally {
       setIsProcessingImage(false);
     }
+  };
+
+  const handle360ScanComplete = (capturedUrl: string) => {
+    setImageDataUrl(capturedUrl);
+    setShowScanner360(false);
+    setActiveStep(1);
   };
 
   const startAnalysis = async () => {
@@ -85,7 +98,6 @@ export default function NativeAppHome() {
 
       const data = await response.json();
 
-      // Store in session and local storage
       const record = {
         id: data.analysisId,
         roomType,
@@ -119,6 +131,8 @@ export default function NativeAppHome() {
     }
   };
 
+  const spatialZone = getHumanSpatialZone(doorDirection);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#020e0c] text-slate-100 pb-28 selection:bg-emerald-500 selection:text-slate-950">
       <TopHeader />
@@ -129,36 +143,57 @@ export default function NativeAppHome() {
 
         {/* 1. Main Native Studio Card (Scanner) */}
         {!imageDataUrl ? (
-          <div className="relative glass-panel-elevated rounded-3xl p-6 text-center space-y-6 border border-emerald-500/20 shadow-2xl overflow-hidden">
+          <div className="relative glass-panel-elevated rounded-3xl p-6 text-center space-y-5 border border-emerald-500/20 shadow-2xl overflow-hidden">
             <div className="space-y-1.5">
               <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                Spatial Chi AI
+                Spatial Chi AI • 3D Room Scan
               </span>
               <h1 className="text-2xl font-black tracking-tight text-white">
                 Scan Your Space
               </h1>
               <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-                Take a photo of your bedroom, desk, or living room to uncover your Feng Shui energy flow and get an authentic AI redesign.
+                Scan your room in 360° or snap a photo. We will map every corner in 3D and show you how to rearrange it into the harmonious Command Position.
               </p>
             </div>
 
-            {/* Glowing Big Action Button */}
-            <div className="relative py-4 flex flex-col items-center justify-center">
-              <label
-                htmlFor="camera-input"
-                className="group relative cursor-pointer active:scale-95 transition-transform"
+            {/* Glowing Big Action Button (360° Scan Trigger) */}
+            <div className="relative py-2 flex flex-col items-center justify-center">
+              <button
+                type="button"
+                onClick={() => setShowScanner360(true)}
+                className="group relative active:scale-95 transition-transform"
               >
                 {/* Glow ring */}
-                <div className="absolute -inset-3 rounded-full bg-gradient-to-tr from-emerald-500/30 to-teal-400/20 blur-xl group-hover:opacity-100 transition duration-500" />
+                <div className="absolute -inset-3 rounded-full bg-gradient-to-tr from-emerald-500/30 via-teal-400/25 to-amber-300/20 blur-xl group-hover:opacity-100 transition duration-500" />
                 <div className="relative w-28 h-28 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-400 to-emerald-300 p-1 shadow-2xl flex items-center justify-center">
                   <div className="w-full h-full rounded-full bg-[#031915] flex flex-col items-center justify-center gap-1 text-emerald-300 group-hover:text-emerald-200 transition-colors">
-                    <Camera className="w-8 h-8 stroke-[2]" />
-                    <span className="text-[11px] font-bold tracking-tight">
-                      Take Photo
+                    <Scan className="w-8 h-8 stroke-[2] animate-pulse" />
+                    <span className="text-[11px] font-black tracking-tight">
+                      360° Scan
                     </span>
                   </div>
                 </div>
-              </label>
+              </button>
+
+              <div className="flex items-center gap-2 mt-4">
+                {/* Secondary: Regular Camera */}
+                <label
+                  htmlFor="camera-input"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-pill text-xs font-semibold text-slate-300 hover:text-white cursor-pointer active:scale-95 transition-all border border-emerald-500/20"
+                >
+                  <Camera className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Snap Photo</span>
+                </label>
+
+                {/* Secondary: Gallery Upload */}
+                <label
+                  htmlFor="gallery-input"
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full glass-pill text-xs font-semibold text-slate-300 hover:text-white cursor-pointer active:scale-95 transition-all border border-emerald-500/20"
+                >
+                  <Upload className="w-3.5 h-3.5 text-emerald-400" />
+                  <span>Upload</span>
+                </label>
+              </div>
 
               {/* Hidden file inputs */}
               <input
@@ -181,14 +216,6 @@ export default function NativeAppHome() {
                 }}
               />
 
-              <label
-                htmlFor="gallery-input"
-                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full glass-pill text-xs font-semibold text-slate-300 hover:text-white cursor-pointer active:scale-95 transition-all border border-emerald-500/20"
-              >
-                <Upload className="w-3.5 h-3.5 text-emerald-400" />
-                <span>Upload from Gallery</span>
-              </label>
-
               {isProcessingImage && (
                 <p className="text-xs text-emerald-400 mt-2 animate-pulse font-medium">
                   Optimizing photo resolution...
@@ -199,16 +226,16 @@ export default function NativeAppHome() {
             {/* Quick Benefits Checklist */}
             <div className="grid grid-cols-3 gap-2 pt-3 border-t border-emerald-500/15 text-[10px] text-slate-300">
               <div className="p-2 rounded-2xl bg-slate-950/50 border border-emerald-500/10 flex flex-col items-center gap-1">
-                <span className="font-bold text-white">0-100</span>
-                <span className="text-slate-400">Chi Score</span>
+                <span className="font-bold text-white">3D Studio</span>
+                <span className="text-slate-400">Interactive</span>
               </div>
               <div className="p-2 rounded-2xl bg-slate-950/50 border border-emerald-500/10 flex flex-col items-center gap-1">
                 <span className="font-bold text-white">Command</span>
                 <span className="text-slate-400">Position Fix</span>
               </div>
               <div className="p-2 rounded-2xl bg-slate-950/50 border border-emerald-500/10 flex flex-col items-center gap-1">
-                <span className="font-bold text-white">AI Visual</span>
-                <span className="text-slate-400">Relayout</span>
+                <span className="font-bold text-white">No Jargon</span>
+                <span className="text-slate-400">Simple Guide</span>
               </div>
             </div>
           </div>
@@ -225,7 +252,7 @@ export default function NativeAppHome() {
               />
               <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-[10px] font-bold text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
                 <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                <span>Your Room Photo</span>
+                <span>Room Captured</span>
               </div>
               <button
                 type="button"
@@ -239,7 +266,7 @@ export default function NativeAppHome() {
             {/* Step Indicators */}
             <div className="flex items-center justify-between text-xs font-semibold border-b border-emerald-500/15 pb-2">
               <span className="text-emerald-300 font-bold">
-                Configure Room Context
+                Room Details
               </span>
               <span className="text-slate-400 text-[11px]">
                 Step {activeStep} of 3
@@ -280,7 +307,7 @@ export default function NativeAppHome() {
                   onClick={() => setActiveStep(2)}
                   className="w-full mt-2 py-3.5 rounded-2xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center justify-center gap-1.5 shadow"
                 >
-                  <span>Continue to Door Heading</span>
+                  <span>Continue to Door Location</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -293,6 +320,17 @@ export default function NativeAppHome() {
                   value={doorDirection}
                   onChange={(d) => setDoorDirection(d)}
                 />
+
+                {/* Plain English Translation of Door Angle */}
+                <div className="p-3 rounded-2xl bg-slate-950/70 border border-emerald-500/20 text-xs text-slate-200 flex items-start gap-2">
+                  <div className="text-[11px]">
+                    <strong className="text-emerald-400 block mb-0.5 font-bold">
+                      Plain English Translation:
+                    </strong>
+                    Facing <span className="font-bold text-white">{doorDirection}</span> corresponds to your{" "}
+                    <span className="text-emerald-300 font-bold">{spatialZone.humanTitle}</span> ({spatialZone.lifeArea}).
+                  </div>
+                </div>
 
                 <div className="flex gap-2">
                   <button
@@ -349,7 +387,7 @@ export default function NativeAppHome() {
 
                 <div className="space-y-1.5 pt-1">
                   <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
-                    <span>Birth Year (Calculates Personal Kua Direction)</span>
+                    <span>Birth Year (Finds Lucky Headboard Wall)</span>
                     <span className="text-slate-500">Optional</span>
                   </label>
                   <input
@@ -378,7 +416,7 @@ export default function NativeAppHome() {
                     className="flex-1 py-3.5 rounded-2xl font-bold text-xs bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200 text-slate-950 hover:brightness-110 flex items-center justify-center gap-2 shadow-xl shadow-emerald-950 disabled:opacity-50"
                   >
                     <Sparkles className="w-4 h-4 text-slate-950" />
-                    <span>{isAnalyzing ? "AI Master Is Analyzing Room..." : "Analyze & Redesign Room ✨"}</span>
+                    <span>{isAnalyzing ? "Building 3D Room & Chi Model..." : "Analyze & Open 3D Studio ✨"}</span>
                   </button>
                 </div>
               </div>
@@ -393,27 +431,27 @@ export default function NativeAppHome() {
           </div>
         )}
 
-        {/* 2. Today's Chi Insight Card */}
+        {/* 2. Plain English Golden Rule Explainer */}
         <div className="glass-panel rounded-3xl p-4 flex items-start gap-3.5 border border-emerald-500/15">
           <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 text-emerald-400">
             <Flame className="w-5 h-5 text-amber-400" />
           </div>
-          <div className="space-y-0.5">
+          <div className="space-y-1">
             <div className="flex items-center gap-1.5">
               <span className="text-xs font-bold text-white">
-                Daily Chi Principle
+                {COMMAND_POSITION_PLAIN_ENGLISH.title}
               </span>
               <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">
-                Command Rule
+                Golden Rule
               </span>
             </div>
-            <p className="text-[11px] text-slate-400 leading-relaxed">
-              Never place your bed or desk directly in line with the entryway. The rushing Chi causes subconscious alertness and degrades deep sleep.
+            <p className="text-[11px] text-slate-300 leading-relaxed">
+              {COMMAND_POSITION_PLAIN_ENGLISH.simpleRule}
             </p>
           </div>
         </div>
 
-        {/* 3. Quick Nav to Standalone Compass */}
+        {/* 3. Quick Nav to 3D Compass Tool */}
         <button
           type="button"
           onClick={() => router.push("/compass")}
@@ -435,6 +473,14 @@ export default function NativeAppHome() {
           <ChevronRight className="w-4 h-4 text-slate-500" />
         </button>
       </main>
+
+      {/* 360° Circular Scanner Modal */}
+      {showScanner360 && (
+        <RoomScanner360
+          onScanComplete={handle360ScanComplete}
+          onCancel={() => setShowScanner360(false)}
+        />
+      )}
 
       {/* Native Floating Bottom Tab Bar */}
       <BottomNav />
