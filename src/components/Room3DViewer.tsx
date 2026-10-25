@@ -70,8 +70,8 @@ export function Room3DViewer({
     scene.background = new THREE.Color("#020e0c");
     sceneRef.current = scene;
 
-    const width = container.clientWidth;
-    const height = container.clientHeight;
+    const width = container.clientWidth || 360;
+    const height = container.clientHeight || 380;
     const camera = new THREE.PerspectiveCamera(42, width / height, 0.1, 100);
     cameraRef.current = camera;
 
@@ -83,6 +83,20 @@ export function Room3DViewer({
     container.innerHTML = "";
     container.appendChild(renderer.domElement);
     rendererRef.current = renderer;
+
+    // ResizeObserver ensures canvas always fills container even on dynamic mobile layout
+    const resizeObserver = new ResizeObserver((entries) => {
+      for (const entry of entries) {
+        const w = entry.contentRect.width;
+        const h = entry.contentRect.height;
+        if (w > 0 && h > 0 && cameraRef.current && rendererRef.current) {
+          cameraRef.current.aspect = w / h;
+          cameraRef.current.updateProjectionMatrix();
+          rendererRef.current.setSize(w, h);
+        }
+      }
+    });
+    resizeObserver.observe(container);
 
     // Lighting
     const ambientLight = new THREE.AmbientLight(0xfff5ea, 1.2);
@@ -479,8 +493,8 @@ export function Room3DViewer({
 
   return (
     <div className="space-y-3">
-      {/* 3D Canvas Box */}
-      <div className="relative w-full aspect-[4/3] sm:aspect-video rounded-3xl overflow-hidden border border-emerald-500/30 shadow-2xl bg-[#020e0c] touch-none">
+      {/* 3D Canvas Box - Explicit height ensures WebGL canvas never collapses */}
+      <div className="relative w-full h-[380px] sm:h-[460px] rounded-3xl overflow-hidden border border-emerald-500/30 shadow-2xl bg-[#020e0c] touch-none">
         <div
           ref={mountRef}
           className="w-full h-full cursor-grab active:cursor-grabbing"

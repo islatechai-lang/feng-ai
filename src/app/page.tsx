@@ -20,6 +20,8 @@ import {
   Scan,
   Maximize2,
   Move,
+  Loader2,
+  Box,
 } from "lucide-react";
 import { TopHeader } from "@/components/TopHeader";
 import { BottomNav } from "@/components/BottomNav";
@@ -34,13 +36,14 @@ export default function NativeAppHome() {
 
   // Upload & Form State
   const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
-  const [roomType, setRoomType] = useState<RoomType>("bedroom");
+  const [roomType, setRoomType] = useState<RoomType>("living_room");
   const [doorDirection, setDoorDirection] = useState<CompassDirection>("SW");
   const [goal, setGoal] = useState<FengShuiGoal>("sleep");
   const [birthYear, setBirthYear] = useState<string>("");
 
   // Modals and 360 Scanner State
   const [showScanner360, setShowScanner360] = useState(false);
+  const [loadingStatus, setLoadingStatus] = useState<string | null>(null);
 
   // Flow State
   const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
@@ -48,43 +51,26 @@ export default function NativeAppHome() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
 
-  // File Handlers
-  const handleFileUpload = async (file: File) => {
-    if (!file.type.startsWith("image/")) {
-      setErrorMsg("Please choose an image file (JPG, PNG, HEIC).");
-      return;
-    }
-    try {
-      setIsProcessingImage(true);
-      setErrorMsg(null);
-      const compressed = await compressImage(file, 1536, 0.85);
-      setImageDataUrl(compressed.dataUrl);
-      setActiveStep(1);
-    } catch {
-      setErrorMsg("Failed to process image. Please try another.");
-    } finally {
-      setIsProcessingImage(false);
-    }
-  };
-
-  const handle360ScanComplete = (capturedUrl: string) => {
-    setImageDataUrl(capturedUrl);
-    setShowScanner360(false);
-    setActiveStep(1);
-  };
-
-  const startAnalysis = async () => {
-    if (!imageDataUrl) return;
-
+  // Direct Analysis execution
+  const executeAnalysis = async (imageUrl: string) => {
     setIsAnalyzing(true);
     setErrorMsg(null);
+    setLoadingStatus("Processing 360° perspective...");
 
     try {
+      setTimeout(() => {
+        setLoadingStatus("Gemini AI: Detecting actual room layout & furniture...");
+      }, 1500);
+
+      setTimeout(() => {
+        setLoadingStatus("Constructing interactive 3D spatial studio...");
+      }, 3500);
+
       const response = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          imageDataUrl,
+          imageDataUrl: imageUrl,
           roomType,
           doorDirection,
           goal,
@@ -93,14 +79,14 @@ export default function NativeAppHome() {
       });
 
       if (!response.ok) {
-        throw new Error("Analysis failed. Please check your photo and try again.");
+        throw new Error("Analysis failed. Please try scanning again.");
       }
 
       const data = await response.json();
 
       const record = {
         id: data.analysisId,
-        roomType,
+        roomType: data.result.scene3D?.roomType || roomType,
         doorDirection,
         goal,
         birthYear: birthYear ? parseInt(birthYear) : undefined,
@@ -124,10 +110,38 @@ export default function NativeAppHome() {
         console.warn(e);
       }
 
+      // Automatically route directly to the 3D Studio!
       router.push(`/result/${data.analysisId}`);
     } catch (err: any) {
       setErrorMsg(err.message || "Failed to analyze room.");
       setIsAnalyzing(false);
+      setLoadingStatus(null);
+    }
+  };
+
+  // Called when 360 scan completes - immediately builds 3D room!
+  const handle360ScanComplete = (capturedUrl: string) => {
+    setImageDataUrl(capturedUrl);
+    setShowScanner360(false);
+    executeAnalysis(capturedUrl);
+  };
+
+  // File Handlers for upload
+  const handleFileUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("Please choose an image file (JPG, PNG, HEIC).");
+      return;
+    }
+    try {
+      setIsProcessingImage(true);
+      setErrorMsg(null);
+      const compressed = await compressImage(file, 1536, 0.85);
+      setImageDataUrl(compressed.dataUrl);
+      executeAnalysis(compressed.dataUrl);
+    } catch {
+      setErrorMsg("Failed to process image. Please try another.");
+    } finally {
+      setIsProcessingImage(false);
     }
   };
 
@@ -141,18 +155,18 @@ export default function NativeAppHome() {
         {/* Subtle Ambient Light Orb behind scanner */}
         <div className="absolute top-16 left-1/2 -translate-x-1/2 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-        {/* 1. Main Native Studio Card (Scanner) */}
-        {!imageDataUrl ? (
+        {/* 1. Main Native Studio Card (Full Focus on 3D Circular Scan) */}
+        {!isAnalyzing ? (
           <div className="relative glass-panel-elevated rounded-3xl p-6 text-center space-y-5 border border-emerald-500/20 shadow-2xl overflow-hidden">
             <div className="space-y-1.5">
               <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
-                Spatial Chi AI • 3D Room Scan
+                Spatial Chi AI • 3D Room Studio
               </span>
               <h1 className="text-2xl font-black tracking-tight text-white">
-                Scan Your Space
+                Scan Your Space in 3D
               </h1>
               <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
-                Scan your room in 360° or snap a photo. We will map every corner in 3D and show you how to rearrange it into the harmonious Command Position.
+                Scan your room in a 360° circle. Gemini AI will identify your real furniture and build an interactive 3D studio showing how to rearrange it into the Command Position.
               </p>
             </div>
 
@@ -178,18 +192,19 @@ export default function NativeAppHome() {
               <button
                 type="button"
                 onClick={() => setShowScanner360(true)}
-                className="mt-4 px-5 py-2.5 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-200 text-slate-950 text-xs font-black tracking-tight shadow-xl shadow-emerald-950/60 active:scale-95 transition flex items-center gap-1.5"
+                className="mt-4 px-6 py-3 rounded-full bg-gradient-to-r from-emerald-500 via-teal-400 to-amber-200 text-slate-950 text-xs font-black tracking-tight shadow-xl shadow-emerald-950/60 active:scale-95 transition flex items-center gap-1.5"
               >
-                <Sparkles className="w-3.5 h-3.5 text-slate-950" />
+                <Sparkles className="w-4 h-4 text-slate-950" />
                 <span>Start 360° Circular Scan</span>
               </button>
 
               {/* Discreet fallback for desktop or photo upload */}
               <label
                 htmlFor="gallery-input"
-                className="mt-3 text-[10px] text-slate-500 hover:text-emerald-300 cursor-pointer underline transition"
+                className="mt-3 text-[11px] text-slate-400 hover:text-emerald-300 cursor-pointer underline transition flex items-center gap-1"
               >
-                or upload room panorama file
+                <Upload className="w-3 h-3 text-slate-500" />
+                <span>or upload room photo / panorama</span>
               </label>
 
               <input
@@ -204,7 +219,7 @@ export default function NativeAppHome() {
 
               {isProcessingImage && (
                 <p className="text-xs text-emerald-400 mt-2 animate-pulse font-medium">
-                  Constructing 3D spatial model...
+                  Optimizing photo resolution...
                 </p>
               )}
             </div>
@@ -212,201 +227,18 @@ export default function NativeAppHome() {
             {/* Quick Benefits Checklist */}
             <div className="grid grid-cols-3 gap-2 pt-3 border-t border-emerald-500/15 text-[10px] text-slate-300">
               <div className="p-2 rounded-2xl bg-slate-950/50 border border-emerald-500/10 flex flex-col items-center gap-1">
-                <span className="font-bold text-white">3D Studio</span>
-                <span className="text-slate-400">Interactive</span>
+                <span className="font-bold text-white">Interactive</span>
+                <span className="text-slate-400">3D Studio</span>
+              </div>
+              <div className="p-2 rounded-2xl bg-slate-950/50 border border-emerald-500/10 flex flex-col items-center gap-1">
+                <span className="font-bold text-white">Your Real</span>
+                <span className="text-slate-400">Furniture</span>
               </div>
               <div className="p-2 rounded-2xl bg-slate-950/50 border border-emerald-500/10 flex flex-col items-center gap-1">
                 <span className="font-bold text-white">Command</span>
-                <span className="text-slate-400">Position Fix</span>
-              </div>
-              <div className="p-2 rounded-2xl bg-slate-950/50 border border-emerald-500/10 flex flex-col items-center gap-1">
-                <span className="font-bold text-white">No Jargon</span>
-                <span className="text-slate-400">Simple Guide</span>
+                <span className="text-slate-400">Position</span>
               </div>
             </div>
-          </div>
-        ) : (
-          /* Step-by-Step Context Form once Photo is selected */
-          <div className="glass-panel-elevated rounded-3xl p-5 space-y-5 border border-emerald-500/25 shadow-2xl">
-            {/* Thumbnail Preview Banner */}
-            <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-emerald-500/30 shadow-lg">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={imageDataUrl}
-                alt="Selected Room"
-                className="w-full h-full object-cover"
-              />
-              <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-[10px] font-bold text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                <span>Room Captured</span>
-              </div>
-              <button
-                type="button"
-                onClick={() => setImageDataUrl(null)}
-                className="absolute top-2 right-2 px-2.5 py-0.5 rounded-full bg-slate-950/80 text-[10px] font-semibold text-slate-300 hover:text-white border border-slate-700"
-              >
-                Retake
-              </button>
-            </div>
-
-            {/* Step Indicators */}
-            <div className="flex items-center justify-between text-xs font-semibold border-b border-emerald-500/15 pb-2">
-              <span className="text-emerald-300 font-bold">
-                Room Details
-              </span>
-              <span className="text-slate-400 text-[11px]">
-                Step {activeStep} of 3
-              </span>
-            </div>
-
-            {/* Step 1: Room Type */}
-            {activeStep === 1 && (
-              <div className="space-y-3">
-                <label className="text-xs font-bold text-slate-200">
-                  What space are you harmonizing?
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: "bedroom", label: "Bedroom", sub: "Sleep & Aura Rejuvenation" },
-                    { id: "office", label: "Work Desk", sub: "Authority & Focus" },
-                    { id: "living_room", label: "Living Room", sub: "Family Chi & Social Flow" },
-                    { id: "kitchen", label: "Dining / Kitchen", sub: "Nourishment & Harmony" },
-                  ].map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      onClick={() => setRoomType(item.id as RoomType)}
-                      className={`p-3 rounded-2xl text-left border transition-all ${
-                        roomType === item.id
-                          ? "bg-emerald-950/70 border-emerald-400 text-white shadow-md shadow-emerald-950"
-                          : "glass-pill text-slate-300 hover:text-white border-transparent"
-                      }`}
-                    >
-                      <div className="text-xs font-bold">{item.label}</div>
-                      <div className="text-[10px] text-slate-400">{item.sub}</div>
-                    </button>
-                  ))}
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => setActiveStep(2)}
-                  className="w-full mt-2 py-3.5 rounded-2xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center justify-center gap-1.5 shadow"
-                >
-                  <span>Continue to Door Location</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            )}
-
-            {/* Step 2: Door Orientation */}
-            {activeStep === 2 && (
-              <div className="space-y-4">
-                <CompassPicker
-                  value={doorDirection}
-                  onChange={(d) => setDoorDirection(d)}
-                />
-
-                {/* Plain English Translation of Door Angle */}
-                <div className="p-3 rounded-2xl bg-slate-950/70 border border-emerald-500/20 text-xs text-slate-200 flex items-start gap-2">
-                  <div className="text-[11px]">
-                    <strong className="text-emerald-400 block mb-0.5 font-bold">
-                      Plain English Translation:
-                    </strong>
-                    Facing <span className="font-bold text-white">{doorDirection}</span> corresponds to your{" "}
-                    <span className="text-emerald-300 font-bold">{spatialZone.humanTitle}</span> ({spatialZone.lifeArea}).
-                  </div>
-                </div>
-
-                <div className="flex gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveStep(1)}
-                    className="py-3 px-4 rounded-2xl text-xs font-semibold glass-pill text-slate-300 hover:text-white"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveStep(3)}
-                    className="flex-1 py-3.5 rounded-2xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center justify-center gap-1.5 shadow"
-                  >
-                    <span>Continue to Intention</span>
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Step 3: Goal & Optional Birth Year */}
-            {activeStep === 3 && (
-              <div className="space-y-4">
-                <label className="text-xs font-bold text-slate-200">
-                  What energy intention do you want to elevate?
-                </label>
-                <div className="grid grid-cols-2 gap-2">
-                  {[
-                    { id: "sleep", label: "Restful Sleep", icon: Moon, color: "text-indigo-400" },
-                    { id: "money", label: "Wealth & Cash", icon: Coins, color: "text-amber-400" },
-                    { id: "career", label: "Career & Focus", icon: Briefcase, color: "text-emerald-400" },
-                    { id: "love", label: "Love & Harmony", icon: Heart, color: "text-rose-400" },
-                  ].map((g) => {
-                    const Icon = g.icon;
-                    const isSelected = goal === g.id;
-                    return (
-                      <button
-                        key={g.id}
-                        type="button"
-                        onClick={() => setGoal(g.id as FengShuiGoal)}
-                        className={`p-3 rounded-2xl text-left border transition-all flex items-center gap-2.5 ${
-                          isSelected
-                            ? "bg-emerald-950/70 border-emerald-400 text-white shadow-md shadow-emerald-950"
-                            : "glass-pill text-slate-300 hover:text-white border-transparent"
-                        }`}
-                      >
-                        <Icon className={`w-4 h-4 ${g.color}`} />
-                        <span className="text-xs font-bold">{g.label}</span>
-                      </button>
-                    );
-                  })}
-                </div>
-
-                <div className="space-y-1.5 pt-1">
-                  <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
-                    <span>Birth Year (Finds Lucky Headboard Wall)</span>
-                    <span className="text-slate-500">Optional</span>
-                  </label>
-                  <input
-                    type="number"
-                    min="1930"
-                    max="2030"
-                    placeholder="e.g. 1996"
-                    value={birthYear}
-                    onChange={(e) => setBirthYear(e.target.value)}
-                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-emerald-500/20 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-400 font-mono"
-                  />
-                </div>
-
-                <div className="flex gap-2 pt-2">
-                  <button
-                    type="button"
-                    onClick={() => setActiveStep(2)}
-                    className="py-3 px-4 rounded-2xl text-xs font-semibold glass-pill text-slate-300 hover:text-white"
-                  >
-                    Back
-                  </button>
-                  <button
-                    type="button"
-                    disabled={isAnalyzing}
-                    onClick={startAnalysis}
-                    className="flex-1 py-3.5 rounded-2xl font-bold text-xs bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200 text-slate-950 hover:brightness-110 flex items-center justify-center gap-2 shadow-xl shadow-emerald-950 disabled:opacity-50"
-                  >
-                    <Sparkles className="w-4 h-4 text-slate-950" />
-                    <span>{isAnalyzing ? "Building 3D Room & Chi Model..." : "Analyze & Open 3D Studio ✨"}</span>
-                  </button>
-                </div>
-              </div>
-            )}
 
             {errorMsg && (
               <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
@@ -414,6 +246,35 @@ export default function NativeAppHome() {
                 <span>{errorMsg}</span>
               </div>
             )}
+          </div>
+        ) : (
+          /* Analyzing / Building 3D Room Loading Screen */
+          <div className="glass-panel-elevated rounded-3xl p-8 text-center space-y-6 border border-emerald-500/30 shadow-2xl">
+            <div className="relative w-24 h-24 mx-auto flex items-center justify-center">
+              <div className="absolute inset-0 rounded-full border-2 border-emerald-500/30 border-t-emerald-400 animate-spin" />
+              <div className="w-16 h-16 rounded-full bg-emerald-950/60 border border-emerald-500/40 flex items-center justify-center text-emerald-400">
+                <Box className="w-8 h-8 animate-pulse" />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h3 className="text-base font-black text-white tracking-tight">
+                Building Your 3D Room Studio
+              </h3>
+              <p className="text-xs text-emerald-300 font-mono animate-pulse">
+                {loadingStatus || "Analyzing spatial energy..."}
+              </p>
+            </div>
+
+            <div className="p-3.5 rounded-2xl bg-slate-950/80 border border-emerald-500/20 text-[11px] text-slate-300 leading-relaxed text-left space-y-1">
+              <div className="flex items-center gap-2 text-emerald-400 font-bold">
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>What happens next:</span>
+              </div>
+              <p>
+                Gemini identifies your real furniture (sofa, desk, or bed) and maps your room into 3D so you can explore, navigate in 360°, and test moving items into the Command Position.
+              </p>
+            </div>
           </div>
         )}
 
@@ -469,7 +330,7 @@ export default function NativeAppHome() {
       )}
 
       {/* Native Floating Bottom Tab Bar - hidden when full-screen scanner is active */}
-      {!showScanner360 && <BottomNav />}
+      {!showScanner360 && !isAnalyzing && <BottomNav />}
     </div>
   );
 }

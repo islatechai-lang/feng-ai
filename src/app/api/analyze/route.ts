@@ -33,7 +33,7 @@ export async function POST(req: NextRequest) {
       try {
         await supabase.from("analyses").insert({
           id: analysisId,
-          room_type: roomType,
+          room_type: pipelineOutput.result.scene3D?.roomType || roomType,
           door_direction: doorDirection,
           goal,
           birth_year: birthYear ? parseInt(birthYear) : null,
