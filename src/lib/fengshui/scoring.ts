@@ -304,13 +304,23 @@ export function evaluateFengShui(
     });
   }
 
-  const scene3D: Room3DScene = {
-    roomType: visionData.roomType,
-    primaryFocalType,
-    detectedItems: sceneItems3D,
-    doorPosition: { x: 0, z: 3.5 },
-    windowPosition: { x: -3.5, z: 0 },
-  };
+  let scene3D: Room3DScene;
+  if (
+    visionData.scene3D &&
+    Array.isArray(visionData.scene3D.detectedItems) &&
+    visionData.scene3D.detectedItems.length > 0
+  ) {
+    scene3D = visionData.scene3D;
+    primaryFocalType = visionData.scene3D.primaryFocalType || primaryFocalType;
+  } else {
+    scene3D = {
+      roomType: visionData.roomType,
+      primaryFocalType,
+      detectedItems: sceneItems3D,
+      doorPosition: { x: 0, z: 3.5 },
+      windowPosition: { x: -3.5, z: 0 },
+    };
+  }
 
   // Kua info if birth year provided
   const kuaInfo = birthYear ? calculateKua(birthYear) : undefined;

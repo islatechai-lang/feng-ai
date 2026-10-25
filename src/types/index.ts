@@ -56,6 +56,7 @@ export interface RoomVisionData {
   lightingQuality: "poor" | "moderate" | "bright" | "harsh";
   dominantColors: string[];
   detectedObjects: DetectedFurniture[];
+  scene3D?: Room3DScene;
   notes: string;
 }
 
@@ -108,29 +109,40 @@ export type FurnitureItemType =
   | "sofa"
   | "chair"
   | "table"
+  | "coffee_table"
   | "dining_table"
   | "tv_unit"
+  | "tv_stand"
   | "bookshelf"
   | "plant"
   | "mirror"
   | "wardrobe"
   | "lighting"
   | "cabinet"
+  | "nightstand"
+  | "rug"
   | "other";
 
 export interface SceneItem3D {
   id: string;
   type: FurnitureItemType;
   label: string;
+  color?: string;
+  dimensions?: { width: number; height: number; depth: number };
   initialPos: { x: number; y: number; z: number; rotY?: number };
   rearrangedPos: { x: number; y: number; z: number; rotY?: number };
-  status: "inauspicious" | "harmonious";
+  status: "inauspicious" | "harmonious" | "neutral";
   issue?: string;
   fixReason: string;
 }
 
 export interface Room3DScene {
   roomType: RoomType;
+  roomDimensions?: { width: number; length: number; height: number };
+  wallColor?: string;
+  floorMaterial?: "wood" | "carpet" | "tile" | "concrete";
+  door?: { wall: "front" | "back" | "left" | "right"; x: number; z: number };
+  windows?: Array<{ wall: "front" | "back" | "left" | "right"; x: number; z: number; width?: number }>;
   detectedItems: SceneItem3D[];
   primaryFocalType: FurnitureItemType;
   doorPosition: { x: number; z: number };

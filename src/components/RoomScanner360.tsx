@@ -34,6 +34,7 @@ export function RoomScanner360({ onScanComplete, onCancel }: RoomScanner360Props
   const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
   const [currentAngle, setCurrentAngle] = useState(0);
   const [pitchAngle, setPitchAngle] = useState(0); // tracks vertical phone tilt to ensure floor is captured
+  const [isCompleted, setIsCompleted] = useState(false);
 
   // 4 circular checkpoints around the room
   const [sectors, setSectors] = useState<ScanSector[]>([
@@ -44,6 +45,7 @@ export function RoomScanner360({ onScanComplete, onCancel }: RoomScanner360Props
   ]);
 
   const capturedImages = useRef<string[]>([]);
+  const hasTriggeredComplete = useRef(false);
 
   // Start Camera Stream with Wide Vertical Field of View (showing floor to ceiling)
   useEffect(() => {
@@ -173,6 +175,25 @@ export function RoomScanner360({ onScanComplete, onCancel }: RoomScanner360Props
     }
   };
 
+  // Auto-complete when 100% scanned
+  useEffect(() => {
+    if (capturedCount === sectors.length && !hasTriggeredComplete.current) {
+      hasTriggeredComplete.current = true;
+      setIsCompleted(true);
+      if (typeof navigator !== "undefined" && navigator.vibrate) {
+        try {
+          navigator.vibrate([60, 40, 80]);
+        } catch {}
+      }
+      const timer = setTimeout(() => {
+        handleFinishScan();
+      }, 800);
+      return () => clearTimeout(timer);
+    }
+  }, [capturedCount]);
+
+  const activeSector = sectors.find((s) => !s.captured) || sectors[sectors.length - 1];
+
   return (
     <div className="fixed inset-0 z-[100] bg-black flex flex-col text-slate-100 select-none overflow-hidden">
       {/* Immersive Full-Bleed Camera View (Full Floor-to-Ceiling Height) */}
@@ -203,18 +224,46 @@ export function RoomScanner360({ onScanComplete, onCancel }: RoomScanner360Props
           </div>
         )}
 
-        {/* Top Header Bar Overlay */}
-        <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/85 via-black/40 to-transparent p-4 safe-top flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full bg-emerald-500/25 border border-emerald-400/50 flex items-center justify-center text-emerald-300 backdrop-blur-md">
-              <Scan className="w-4 h-4" />
+        {/* Top Header Bar Overlay: Sleek HUD with Circular Progress */}
+        <div className="absolute top-0 left-0 right-0 z-20 bg-gradient-to-b from-black/90 via-black/50 to-transparent p-4 safe-top flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Elegant Circular Progress Badge */}
+            <div className="relative w-10 h-10 flex items-center justify-center shrink-0">
+              <svg className="w-10 h-10 -rotate-90">
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="16"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  className="text-emerald-950/80"
+                  fill="none"
+                />
+                <circle
+                  cx="20"
+                  cy="20"
+                  r="16"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  className="text-emerald-400 transition-all duration-500"
+                  strokeDasharray={100}
+                  strokeDashoffset={100 - (100 * progressPercent) / 100}
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </svg>
+              <span className="absolute text-[10px] font-black font-mono text-white">
+                {progressPercent}%
+              </span>
             </div>
+
             <div>
-              <h2 className="text-sm font-black text-white tracking-tight drop-shadow-md">
-                360° Full Room Scanner
-              </h2>
-              <p className="text-[10px] text-emerald-300 drop-shadow-sm font-semibold">
-                Capture Floor, Furniture & Walls
+              <div className="text-xs font-black text-white flex items-center gap-1.5 drop-shadow">
+                <span>{isCompleted ? "Room Captured! ✨" : activeSector.label}</span>
+                {isCompleted && <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />}
+              </div>
+              <p className="text-[10px] text-emerald-300 drop-shadow-sm font-medium">
+                {isCompleted ? "Building 3D spatial studio..." : activeSector.description}
               </p>
             </div>
           </div>
@@ -222,46 +271,54 @@ export function RoomScanner360({ onScanComplete, onCancel }: RoomScanner360Props
           <button
             type="button"
             onClick={onCancel}
-            className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white active:scale-95 transition"
+            className="w-9 h-9 rounded-full bg-black/60 backdrop-blur-md border border-white/20 flex items-center justify-center text-white active:scale-95 transition shrink-0"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Center Circular 360° Radar Overlay */}
-        <div className="relative z-10 w-56 h-56 rounded-full border-2 border-emerald-400/40 flex items-center justify-center pointer-events-none shadow-[0_0_30px_rgba(16,185,129,0.25)]">
-          {/* Axis Crosshairs */}
-          <div className="absolute w-full h-[1px] bg-emerald-400/30" />
-          <div className="absolute h-full w-[1px] bg-emerald-400/30" />
+        {/* Center Minimal AR Guidance Reticle (Translucent & Unobtrusive) */}
+        {!isCompleted ? (
+          <div className="relative z-10 w-52 h-52 pointer-events-none flex items-center justify-center">
+            {/* Corner Bracket Reticles */}
+            <div className="absolute top-0 left-0 w-6 h-6 border-t-2 border-l-2 border-emerald-400/70 rounded-tl-lg" />
+            <div className="absolute top-0 right-0 w-6 h-6 border-t-2 border-r-2 border-emerald-400/70 rounded-tr-lg" />
+            <div className="absolute bottom-0 left-0 w-6 h-6 border-b-2 border-l-2 border-emerald-400/70 rounded-bl-lg" />
+            <div className="absolute bottom-0 right-0 w-6 h-6 border-b-2 border-r-2 border-emerald-400/70 rounded-br-lg" />
 
-          {/* Rotating Ring */}
-          <div
-            className="absolute -inset-1 rounded-full border-2 border-emerald-400 border-t-transparent animate-spin duration-1000"
-            style={{ animationDuration: "12s" }}
-          />
+            {/* Subtle Crosshair */}
+            <div className="w-3 h-0.5 bg-emerald-400/50" />
+            <div className="h-3 w-0.5 bg-emerald-400/50 absolute" />
 
-          {/* Center Target Info */}
-          <div className="text-center space-y-0.5 bg-black/80 backdrop-blur-md px-3.5 py-2.5 rounded-2xl border border-emerald-400/50 shadow-2xl">
-            <span className="text-[9px] font-bold uppercase tracking-widest text-emerald-300">
-              360° Mapped
-            </span>
-            <div className="text-3xl font-black font-mono text-white leading-none">
-              {progressPercent}%
+            {/* Rotating Guide Ring (Subtle) */}
+            <div
+              className="absolute inset-2 rounded-full border border-dashed border-emerald-400/25 animate-spin"
+              style={{ animationDuration: "14s" }}
+            />
+          </div>
+        ) : (
+          /* Celebratory 100% Captured HUD Modal */
+          <div className="relative z-20 px-6 py-4 rounded-3xl bg-black/90 backdrop-blur-xl border border-emerald-400/60 text-center space-y-2 shadow-2xl animate-in zoom-in-95 duration-300">
+            <div className="w-12 h-12 rounded-full bg-emerald-500/20 border border-emerald-400 flex items-center justify-center text-emerald-400 mx-auto animate-bounce">
+              <CheckCircle2 className="w-7 h-7" />
             </div>
-            <div className="text-[10px] text-slate-300 font-semibold">
-              {capturedCount}/4 Quadrants
+            <div className="text-sm font-black text-white">
+              360° Scan Complete!
+            </div>
+            <div className="text-xs text-emerald-300 font-mono">
+              Loading 3D Spatial Geometry...
             </div>
           </div>
-        </div>
+        )}
 
         {/* Floor Leveler Tip Pill (Reminds user to keep floor visible) */}
-        <div className="absolute bottom-44 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-emerald-500/40 text-[11px] text-slate-200 pointer-events-none flex items-center gap-1.5 shadow-lg whitespace-nowrap z-20">
+        <div className="absolute bottom-40 left-1/2 -translate-x-1/2 px-4 py-1.5 rounded-full bg-black/75 backdrop-blur-md border border-emerald-500/40 text-[11px] text-slate-200 pointer-events-none flex items-center gap-1.5 shadow-lg whitespace-nowrap z-20">
           <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
           <span>Keep the floor & furniture feet visible in frame</span>
         </div>
 
         {/* Bottom Panel Overlay: Quadrants & Generate Action Button */}
-        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black via-black/90 to-transparent p-4 safe-bottom space-y-3">
+        <div className="absolute bottom-0 left-0 right-0 z-20 bg-gradient-to-t from-black via-black/95 to-transparent p-4 safe-bottom space-y-3">
           {/* 4 Quadrants Pill Row */}
           <div className="grid grid-cols-4 gap-1.5">
             {sectors.map((sector, idx) => (
@@ -283,14 +340,15 @@ export function RoomScanner360({ onScanComplete, onCancel }: RoomScanner360Props
             ))}
           </div>
 
-          {/* Action Button: Full-Width Primary Button */}
+          {/* Action Button */}
           <button
             type="button"
             onClick={handleFinishScan}
-            className="w-full py-4 rounded-2xl font-black text-xs bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200 text-slate-950 hover:brightness-110 flex items-center justify-center gap-2 shadow-2xl shadow-emerald-950 active:scale-95 transition"
+            disabled={isCompleted}
+            className="w-full py-4 rounded-2xl font-black text-xs bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200 text-slate-950 hover:brightness-110 flex items-center justify-center gap-2 shadow-2xl shadow-emerald-950 active:scale-95 transition disabled:opacity-90"
           >
             <Sparkles className="w-4 h-4 text-slate-950" />
-            <span>Generate 3D Room Studio ✨</span>
+            <span>{isCompleted ? "Generating 3D Room Studio..." : "Generate 3D Room Studio ✨"}</span>
           </button>
         </div>
 
