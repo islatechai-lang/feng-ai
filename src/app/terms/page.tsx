@@ -1,46 +1,36 @@
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import { TopHeader } from "@/components/TopHeader";
+import { BottomNav } from "@/components/BottomNav";
 
 export default function TermsPage() {
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-[#020e0c] text-slate-100 pb-28 selection:bg-emerald-500 selection:text-slate-950">
+      <TopHeader />
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 sm:px-6 py-12 space-y-8">
-        <div className="space-y-2">
-          <h1 className="text-3xl font-black text-white">Terms of Service</h1>
-          <p className="text-xs text-slate-400">Last updated: October 2026</p>
+      <main className="flex-1 max-w-md w-full mx-auto px-4 pt-4 space-y-5">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-black text-white">Terms of Service</h1>
+          <p className="text-[11px] text-slate-400">Last updated: October 2026</p>
         </div>
 
-        <div className="prose prose-invert text-xs text-slate-300 leading-relaxed space-y-4">
-          <h3 className="text-sm font-bold text-white">1. Agreement to Terms</h3>
-          <p>
-            By accessing or using FengShui AI, you agree to be bound by these Terms of Service. If you disagree with any part of these terms, you may not use our services.
+        <div className="glass-panel p-5 rounded-3xl border border-emerald-500/15 space-y-3 text-xs text-slate-300 leading-relaxed">
+          <h3 className="text-xs font-bold text-white">1. Service Scope</h3>
+          <p className="text-[11px] text-slate-400">
+            FengShui AI provides spatial layout diagnoses and generative suggestions for cultural and personal enjoyment. One free scan is offered per device.
           </p>
 
-          <h3 className="text-sm font-bold text-white">2. Description of Service</h3>
-          <p>
-            FengShui AI provides automated spatial layout diagnoses and generative interior suggestions based on classical Feng Shui guidelines. One free analysis is offered per device/guest session, followed by optional single room unlocks, weekly mover passes, or annual subscriptions.
+          <h3 className="text-xs font-bold text-white pt-1">2. Fair Use</h3>
+          <p className="text-[11px] text-slate-400">
+            Paid plans include fair-use caps on AI image generations (15 revisions per room) to prevent automated bot scraping.
           </p>
 
-          <h3 className="text-sm font-bold text-white">3. Fair Use & Image Generation Caps</h3>
-          <p>
-            To prevent server abuse and bot flooding, paid plans include fair-use caps on AI image generations (e.g. up to 15 image revisions per room on single unlocks, and 50 revisions per week on weekly passes). Automated scraping or reverse engineering of UnoRouter endpoints is strictly prohibited.
-          </p>
-
-          <h3 className="text-sm font-bold text-white">4. Subscriptions & Billing</h3>
-          <p>
-            Weekly passes and Annual Pro subscriptions automatically renew at the specified billing intervals unless canceled at least 24 hours prior to the next billing date. You can cancel your subscription at any time via your account billing portal.
-          </p>
-
-          <h3 className="text-sm font-bold text-white">5. Refunds</h3>
-          <p>
-            If you experience technical issues where the AI pipeline fails to produce your paid report, our support team will provide credits or a prompt refund upon request within 14 days of purchase.
+          <h3 className="text-xs font-bold text-white pt-1">3. Subscriptions</h3>
+          <p className="text-[11px] text-slate-400">
+            Weekly and annual passes renew automatically unless canceled 24h prior. You may cancel anytime in your account.
           </p>
         </div>
       </main>
 
-      <Footer />
+      <BottomNav />
     </div>
   );
 }

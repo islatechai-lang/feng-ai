@@ -1,287 +1,493 @@
-import Link from "next/link";
-import { Sparkles, ArrowRight, Compass, ShieldCheck, CheckCircle2, Eye, Bed, MoveRight, Star, Heart } from "lucide-react";
-import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+"use client";
 
-export default function HomePage() {
+import { useState } from "react";
+import { useRouter } from "next/navigation";
+import Image from "next/image";
+import {
+  Camera,
+  Upload,
+  Sparkles,
+  Compass,
+  ArrowRight,
+  ChevronRight,
+  ShieldCheck,
+  CheckCircle2,
+  AlertCircle,
+  Flame,
+  Moon,
+  Coins,
+  Briefcase,
+  Heart,
+} from "lucide-react";
+import { TopHeader } from "@/components/TopHeader";
+import { BottomNav } from "@/components/BottomNav";
+import { CompassPicker } from "@/components/CompassPicker";
+import { compressImage } from "@/lib/image/compress";
+import { SAMPLE_ROOMS, SampleRoom } from "@/lib/sample-data";
+import { RoomType, CompassDirection, FengShuiGoal } from "@/types";
+
+export default function NativeAppHome() {
+  const router = useRouter();
+
+  // Upload & Form State
+  const [imageDataUrl, setImageDataUrl] = useState<string | null>(null);
+  const [selectedPresetName, setSelectedPresetName] = useState<string | null>(null);
+  const [roomType, setRoomType] = useState<RoomType>("bedroom");
+  const [doorDirection, setDoorDirection] = useState<CompassDirection>("SW");
+  const [goal, setGoal] = useState<FengShuiGoal>("sleep");
+  const [birthYear, setBirthYear] = useState<string>("");
+
+  // Flow State
+  const [activeStep, setActiveStep] = useState<1 | 2 | 3>(1);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // File Handlers
+  const handleFileUpload = async (file: File) => {
+    if (!file.type.startsWith("image/")) {
+      setErrorMsg("Please choose an image file (JPG, PNG, HEIC).");
+      return;
+    }
+    try {
+      setIsProcessingImage(true);
+      setErrorMsg(null);
+      const compressed = await compressImage(file, 1536, 0.85);
+      setImageDataUrl(compressed.dataUrl);
+      setSelectedPresetName(null);
+      setActiveStep(1);
+    } catch {
+      setErrorMsg("Failed to process image. Please try another.");
+    } finally {
+      setIsProcessingImage(false);
+    }
+  };
+
+  const handlePresetSelect = (preset: SampleRoom) => {
+    setImageDataUrl(preset.previewUrl);
+    setSelectedPresetName(preset.name);
+    setRoomType(preset.roomType);
+    setDoorDirection(preset.doorDirection);
+    setGoal(preset.goal);
+    if (preset.birthYear) setBirthYear(preset.birthYear.toString());
+    setActiveStep(1);
+  };
+
+  const startAnalysis = async () => {
+    if (!imageDataUrl) return;
+
+    setIsAnalyzing(true);
+    setErrorMsg(null);
+
+    try {
+      const response = await fetch("/api/analyze", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          imageDataUrl,
+          roomType,
+          doorDirection,
+          goal,
+          birthYear: birthYear || undefined,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Analysis failed. Please try again.");
+      }
+
+      const data = await response.json();
+
+      // Store in session and local storage
+      const record = {
+        id: data.analysisId,
+        roomType,
+        doorDirection,
+        goal,
+        birthYear: birthYear ? parseInt(birthYear) : undefined,
+        originalImageUrl: data.originalImageUrl,
+        editedImageUrl: data.editedImageUrl,
+        result: data.result,
+        svgBefore: data.svgBefore,
+        svgAfter: data.svgAfter,
+        isUnlocked: false,
+        createdAt: new Date().toISOString(),
+      };
+
+      try {
+        sessionStorage.setItem(`analysis_${data.analysisId}`, JSON.stringify(record));
+        const stored = JSON.parse(localStorage.getItem("fengshui_analyses") || "[]");
+        localStorage.setItem(
+          "fengshui_analyses",
+          JSON.stringify([record, ...stored.filter((r: any) => r.id !== data.analysisId)])
+        );
+      } catch (e) {
+        console.warn(e);
+      }
+
+      router.push(`/result/${data.analysisId}`);
+    } catch (err: any) {
+      setErrorMsg(err.message || "Failed to analyze room.");
+      setIsAnalyzing(false);
+    }
+  };
+
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-[#020e0c] text-slate-100 pb-28 selection:bg-emerald-500 selection:text-slate-950">
+      <TopHeader />
 
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden pt-12 pb-20 sm:pt-20 sm:pb-28">
-          {/* Subtle Ambient Background Gradients */}
-          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-96 bg-gradient-to-b from-emerald-500/10 via-teal-500/5 to-transparent blur-3xl pointer-events-none" />
-          <div className="absolute top-20 right-10 w-72 h-72 rounded-full bg-amber-500/5 blur-3xl pointer-events-none" />
+      <main className="flex-1 max-w-md w-full mx-auto px-4 pt-4 space-y-6">
+        {/* Subtle Ambient Light Orb behind scanner */}
+        <div className="absolute top-16 left-1/2 -translate-x-1/2 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10 text-center">
-            {/* Pill Tag */}
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-semibold bg-emerald-950/80 border border-emerald-700/60 text-emerald-300 shadow-lg shadow-emerald-950/50 mb-6">
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              <span>Classical Bagua & Spatial AI Combined</span>
-            </div>
-
-            {/* Main Headline */}
-            <h1 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight text-white max-w-4xl mx-auto leading-[1.1]">
-              Upload your room photo. <br />
-              <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200 bg-clip-text text-transparent">
-                Unlock harmonious Chi.
+        {/* 1. Main Native Studio Card (Scanner) */}
+        {!imageDataUrl ? (
+          <div className="relative glass-panel-elevated rounded-3xl p-6 text-center space-y-5 border border-emerald-500/20 shadow-2xl overflow-hidden">
+            <div className="space-y-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+                Spatial Chi AI
               </span>
-            </h1>
-
-            {/* Sub-headline */}
-            <p className="mt-6 text-base sm:text-xl text-slate-300 max-w-2xl mx-auto leading-relaxed">
-              Tell us which way your door faces. Get your instant Feng Shui score, identify the #1 energy leak, and see an AI-rearranged room with your bed and desk in the true Command Position.
-            </p>
-
-            {/* CTA Buttons */}
-            <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link
-                href="/analyze"
-                className="w-full sm:w-auto px-8 py-4 rounded-2xl font-bold text-base bg-gradient-to-r from-emerald-500 via-teal-500 to-emerald-400 text-slate-950 hover:from-emerald-400 hover:to-teal-300 shadow-xl shadow-emerald-950/80 transition-all hover:scale-105 active:scale-95 flex items-center justify-center gap-2.5"
-              >
-                <Sparkles className="w-5 h-5 text-slate-950" />
-                <span>Analyze My Room — Free</span>
-              </Link>
-
-              <Link
-                href="/seo/feng-shui-bedroom-layout"
-                className="w-full sm:w-auto px-6 py-4 rounded-2xl font-semibold text-sm bg-slate-900/80 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 transition flex items-center justify-center gap-2"
-              >
-                <span>Read the Guide</span>
-                <ArrowRight className="w-4 h-4 text-slate-400" />
-              </Link>
-            </div>
-
-            {/* Trust Badges */}
-            <div className="mt-8 flex flex-wrap items-center justify-center gap-6 text-xs text-slate-400">
-              <div className="flex items-center gap-1.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                <span>No signup required for first result</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <ShieldCheck className="w-4 h-4 text-teal-400" />
-                <span>Private & encrypted uploads</span>
-              </div>
-              <div className="flex items-center gap-1.5">
-                <Compass className="w-4 h-4 text-amber-400" />
-                <span>Classical Ba Zhai & Eight Mansions</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Live Interactive Before/After Preview */}
-        <section className="py-12 bg-slate-900/30 border-y border-slate-800/80">
-          <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center space-y-2 mb-8">
-              <h2 className="text-xs uppercase tracking-widest text-emerald-400 font-bold">
-                Interactive Transformation
-              </h2>
-              <p className="text-2xl sm:text-3xl font-black text-white">
-                See How Spatial Rearrangement Changes Everything
-              </p>
-              <p className="text-xs sm:text-sm text-slate-400 max-w-xl mx-auto">
-                Drag the slider below to see a real bedroom transformation: resolving the dangerous "coffin position" and moving the bed into the authoritative Command Position.
+              <h1 className="text-2xl font-black tracking-tight text-white">
+                Scan Your Room
+              </h1>
+              <p className="text-xs text-slate-300 max-w-xs mx-auto leading-relaxed">
+                Snap a photo to unlock your Feng Shui score, Command Position fixes, and an AI-rearranged layout.
               </p>
             </div>
 
-            <div className="max-w-4xl mx-auto">
-              <BeforeAfterSlider
-                originalUrl="https://images.unsplash.com/photo-1540518614846-7ede433c4570?auto=format&fit=crop&w=1200&q=80"
-                afterUrl="https://images.unsplash.com/photo-1616594039964-ae9021a400a0?auto=format&fit=crop&w=1200&q=80"
+            {/* Glowing Big Action Button */}
+            <div className="relative py-4 flex flex-col items-center justify-center">
+              <label
+                htmlFor="camera-input"
+                className="group relative cursor-pointer active:scale-95 transition-transform"
+              >
+                {/* Glow ring */}
+                <div className="absolute -inset-3 rounded-full bg-gradient-to-tr from-emerald-500/30 to-teal-400/20 blur-xl group-hover:opacity-100 transition duration-500" />
+                <div className="relative w-28 h-28 rounded-full bg-gradient-to-tr from-emerald-500 via-teal-400 to-emerald-300 p-1 shadow-2xl flex items-center justify-center">
+                  <div className="w-full h-full rounded-full bg-[#031915] flex flex-col items-center justify-center gap-1 text-emerald-300 group-hover:text-emerald-200 transition-colors">
+                    <Camera className="w-8 h-8 stroke-[2]" />
+                    <span className="text-[11px] font-bold tracking-tight">
+                      Take Photo
+                    </span>
+                  </div>
+                </div>
+              </label>
+
+              {/* Hidden file inputs */}
+              <input
+                id="camera-input"
+                type="file"
+                accept="image/*"
+                capture="environment"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
+                }}
               />
-            </div>
-          </div>
-        </section>
+              <input
+                id="gallery-input"
+                type="file"
+                accept="image/*"
+                className="hidden"
+                onChange={(e) => {
+                  if (e.target.files?.[0]) handleFileUpload(e.target.files[0]);
+                }}
+              />
 
-        {/* How It Works (3 Simple Steps) */}
-        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-3 mb-14">
-            <h2 className="text-xs uppercase tracking-widest text-emerald-400 font-bold">
-              Effortless 3-Step Flow
-            </h2>
-            <h3 className="text-3xl sm:text-4xl font-black text-white">
-              From Photo to Harmonious Sanctuary
-            </h3>
-            <p className="text-sm text-slate-400 max-w-lg mx-auto">
-              No complex floorplan drafting needed. Our spatial AI reads your room geometry in seconds.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {/* Step 1 */}
-            <div className="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 space-y-4 hover:border-emerald-600/40 transition">
-              <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 font-bold font-mono text-lg">
-                01
-              </div>
-              <h4 className="text-lg font-bold text-white">1. Snap a Photo</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Take a quick photo of your bedroom, office desk, or living area showing where the furniture sits relative to the door.
-              </p>
-            </div>
-
-            {/* Step 2 */}
-            <div className="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 space-y-4 hover:border-emerald-600/40 transition">
-              <div className="w-12 h-12 rounded-2xl bg-teal-500/10 border border-teal-500/30 flex items-center justify-center text-teal-400 font-bold font-mono text-lg">
-                02
-              </div>
-              <h4 className="text-lg font-bold text-white">2. Align Compass & Intention</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Tap your main doorway's compass direction (or use your phone's built-in compass sensor) and pick your goal: Wealth, Sleep, Career, or Love.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="p-8 rounded-3xl bg-slate-900/50 border border-slate-800 space-y-4 hover:border-emerald-600/40 transition">
-              <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold font-mono text-lg">
-                03
-              </div>
-              <h4 className="text-lg font-bold text-white">3. Reveal Score & Rearrangement</h4>
-              <p className="text-xs text-slate-400 leading-relaxed">
-                Receive your 0-100 score, discover the #1 critical energy leak, and see the exact photorealistic furniture moves to restore balance.
-              </p>
-            </div>
-          </div>
-        </section>
-
-        {/* The 4 Classical Principles Checked */}
-        <section className="py-20 bg-slate-900/40 border-t border-slate-800/80">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-            <div className="text-center space-y-3 mb-14">
-              <h2 className="text-xs uppercase tracking-widest text-emerald-400 font-bold">
-                Classical Depth
-              </h2>
-              <h3 className="text-3xl sm:text-4xl font-black text-white">
-                What the AI Evaluates Behind the Scenes
-              </h3>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-              <div className="p-6 rounded-3xl bg-slate-950 border border-slate-800 space-y-2.5">
-                <div className="w-8 h-8 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold text-xs">
-                  01
-                </div>
-                <h4 className="text-sm font-bold text-white">Command Position</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Ensures bed or desk diagonal to the door with clear sightline without direct alignment.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-3xl bg-slate-950 border border-slate-800 space-y-2.5">
-                <div className="w-8 h-8 rounded-xl bg-teal-500/20 text-teal-400 flex items-center justify-center font-bold text-xs">
-                  02
-                </div>
-                <h4 className="text-sm font-bold text-white">Coffin Position & Mirrors</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Flags beds directly aligned with entry doorways or reflective surfaces bouncing nocturnal Chi.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-3xl bg-slate-950 border border-slate-800 space-y-2.5">
-                <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold text-xs">
-                  03
-                </div>
-                <h4 className="text-sm font-bold text-white">Five Elements & Colors</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Balances Wood, Fire, Earth, Metal, and Water elements tailored to your sector direction.
-                </p>
-              </div>
-
-              <div className="p-6 rounded-3xl bg-slate-950 border border-slate-800 space-y-2.5">
-                <div className="w-8 h-8 rounded-xl bg-rose-500/20 text-rose-400 flex items-center justify-center font-bold text-xs">
-                  04
-                </div>
-                <h4 className="text-sm font-bold text-white">Personal Kua Directions</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">
-                  Calculates your Eight Mansions Kua number to reveal your personal Sheng Chi and Tian Yi directions.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Global Testimonials */}
-        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center space-y-3 mb-14">
-            <h2 className="text-xs uppercase tracking-widest text-emerald-400 font-bold">
-              Loved by Movers & Redecorators
-            </h2>
-            <h3 className="text-3xl sm:text-4xl font-black text-white">
-              Trusted Across Singapore, Manila, Jakarta & Worldwide
-            </h3>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <div className="p-6 rounded-3xl bg-slate-900/50 border border-slate-800 space-y-4">
-              <div className="flex gap-1 text-amber-400">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-400" />
-                ))}
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                "I had terrible insomnia in my new BTO condo for months. The app flagged that my bed was in the 'coffin position' and reflecting a wardrobe mirror. Moving it diagonally changed my sleep in three days."
-              </p>
-              <div className="text-xs font-bold text-white">
-                Cheryl T. <span className="text-slate-400 font-normal">• Singapore</span>
-              </div>
-            </div>
-
-            <div className="p-6 rounded-3xl bg-slate-900/50 border border-slate-800 space-y-4">
-              <div className="flex gap-1 text-amber-400">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-400" />
-                ))}
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                "As someone working remotely from Manila, having my desk facing the wall with my back to the door was making me anxious. The command position rearrangement gave me so much peace of mind."
-              </p>
-              <div className="text-xs font-bold text-white">
-                Mateo R. <span className="text-slate-400 font-normal">• Manila, Philippines</span>
-              </div>
-            </div>
-
-            <div className="p-6 rounded-3xl bg-slate-900/50 border border-slate-800 space-y-4">
-              <div className="flex gap-1 text-amber-400">
-                {[...Array(5)].map((_, i) => (
-                  <Star key={i} className="w-4 h-4 fill-amber-400" />
-                ))}
-              </div>
-              <p className="text-xs text-slate-300 leading-relaxed">
-                "The 2D floorplan diagram alone is worth it. It clearly showed my partner and me how the rushing Chi was escaping through our living room balcony."
-              </p>
-              <div className="text-xs font-bold text-white">
-                Dian S. <span className="text-slate-400 font-normal">• Jakarta, Indonesia</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Bottom CTA Banner */}
-        <section className="py-20 bg-gradient-to-b from-slate-950 via-emerald-950/30 to-slate-950 border-t border-slate-800">
-          <div className="max-w-4xl mx-auto px-4 text-center space-y-6">
-            <h3 className="text-3xl sm:text-5xl font-black text-white tracking-tight">
-              Ready to Align Your Room's Energy?
-            </h3>
-            <p className="text-sm sm:text-base text-slate-300 max-w-xl mx-auto">
-              Get your room's Feng Shui score and #1 fix in 15 seconds. Completely free to start.
-            </p>
-            <div>
-              <Link
-                href="/analyze"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-bold text-base bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-xl shadow-emerald-950/80 transition-transform hover:scale-105 active:scale-95"
+              <label
+                htmlFor="gallery-input"
+                className="mt-4 inline-flex items-center gap-1.5 px-4 py-2 rounded-full glass-pill text-xs font-semibold text-slate-300 hover:text-white cursor-pointer active:scale-95 transition-all"
               >
-                <Sparkles className="w-5 h-5" />
-                <span>Start Free Analysis</span>
-              </Link>
+                <Upload className="w-3.5 h-3.5 text-emerald-400" />
+                <span>Choose from Library</span>
+              </label>
+
+              {isProcessingImage && (
+                <p className="text-xs text-emerald-400 mt-2 animate-pulse font-medium">
+                  Optimizing photo...
+                </p>
+              )}
+            </div>
+
+            {/* Feature highlights */}
+            <div className="grid grid-cols-3 gap-2 pt-2 border-t border-emerald-500/10 text-[10px] text-slate-400">
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-bold text-slate-200">Instant</span>
+                <span>0-100 Score</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-bold text-slate-200">Command</span>
+                <span>Position Fix</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="font-bold text-slate-200">AI Visual</span>
+                <span>Rearranged Room</span>
+              </div>
             </div>
           </div>
-        </section>
+        ) : (
+          /* Step-by-Step Context Form once Photo is selected */
+          <div className="glass-panel-elevated rounded-3xl p-5 space-y-5 border border-emerald-500/25 shadow-2xl">
+            {/* Thumbnail Preview Banner */}
+            <div className="relative w-full aspect-video rounded-2xl overflow-hidden border border-emerald-500/30 shadow-lg">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={imageDataUrl}
+                alt="Selected Room"
+                className="w-full h-full object-cover"
+              />
+              <div className="absolute top-2 left-2 px-2.5 py-0.5 rounded-full bg-slate-950/80 backdrop-blur-md text-[10px] font-bold text-emerald-300 border border-emerald-500/30 flex items-center gap-1">
+                <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                <span>{selectedPresetName || "Photo Ready"}</span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setImageDataUrl(null)}
+                className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-slate-950/80 text-[10px] text-slate-300 hover:text-white"
+              >
+                Change
+              </button>
+            </div>
+
+            {/* Step Indicators */}
+            <div className="flex items-center justify-between text-xs font-semibold border-b border-emerald-500/15 pb-2">
+              <span className="text-emerald-300">
+                Configure Room Context
+              </span>
+              <span className="text-slate-400 text-[11px]">
+                Step {activeStep} of 3
+              </span>
+            </div>
+
+            {/* Step 1: Room Type */}
+            {activeStep === 1 && (
+              <div className="space-y-3">
+                <label className="text-xs font-bold text-slate-200">
+                  What kind of space is this?
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: "bedroom", label: "Bedroom", sub: "Bed & sleep Chi" },
+                    { id: "office", label: "Work Desk", sub: "Career authority" },
+                    { id: "living_room", label: "Living Room", sub: "Family harmony" },
+                    { id: "kitchen", label: "Kitchen / Dining", sub: "Fire/Water balance" },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => setRoomType(item.id as RoomType)}
+                      className={`p-3 rounded-2xl text-left border transition-all ${
+                        roomType === item.id
+                          ? "bg-emerald-950/70 border-emerald-400 text-white shadow-md shadow-emerald-950"
+                          : "glass-pill text-slate-300 hover:text-white border-transparent"
+                      }`}
+                    >
+                      <div className="text-xs font-bold">{item.label}</div>
+                      <div className="text-[10px] text-slate-400">{item.sub}</div>
+                    </button>
+                  ))}
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setActiveStep(2)}
+                  className="w-full mt-2 py-3 rounded-2xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center justify-center gap-1.5 shadow"
+                >
+                  <span>Continue to Door Direction</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            )}
+
+            {/* Step 2: Door Orientation */}
+            {activeStep === 2 && (
+              <div className="space-y-4">
+                <CompassPicker
+                  value={doorDirection}
+                  onChange={(d) => setDoorDirection(d)}
+                />
+
+                <div className="flex gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(1)}
+                    className="py-3 px-4 rounded-2xl text-xs font-semibold glass-pill text-slate-300 hover:text-white"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(3)}
+                    className="flex-1 py-3 rounded-2xl font-bold text-xs bg-emerald-500 text-slate-950 hover:bg-emerald-400 flex items-center justify-center gap-1.5 shadow"
+                  >
+                    <span>Continue to Intention</span>
+                    <ArrowRight className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* Step 3: Goal & Optional Birth Year */}
+            {activeStep === 3 && (
+              <div className="space-y-4">
+                <label className="text-xs font-bold text-slate-200">
+                  What energy do you want to cultivate?
+                </label>
+                <div className="grid grid-cols-2 gap-2">
+                  {[
+                    { id: "sleep", label: "Rest & Calm", icon: Moon, color: "text-indigo-400" },
+                    { id: "money", label: "Wealth & Cash", icon: Coins, color: "text-amber-400" },
+                    { id: "career", label: "Career & Focus", icon: Briefcase, color: "text-emerald-400" },
+                    { id: "love", label: "Love & Harmony", icon: Heart, color: "text-rose-400" },
+                  ].map((g) => {
+                    const Icon = g.icon;
+                    const isSelected = goal === g.id;
+                    return (
+                      <button
+                        key={g.id}
+                        type="button"
+                        onClick={() => setGoal(g.id as FengShuiGoal)}
+                        className={`p-3 rounded-2xl text-left border transition-all flex items-center gap-2.5 ${
+                          isSelected
+                            ? "bg-emerald-950/70 border-emerald-400 text-white shadow-md shadow-emerald-950"
+                            : "glass-pill text-slate-300 hover:text-white border-transparent"
+                        }`}
+                      >
+                        <Icon className={`w-4 h-4 ${g.color}`} />
+                        <span className="text-xs font-bold">{g.label}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+
+                <div className="space-y-1.5 pt-1">
+                  <label className="text-[11px] font-semibold text-slate-300 flex items-center justify-between">
+                    <span>Birth Year (Optional for Personal Kua)</span>
+                    <span className="text-slate-500">e.g. 1996</span>
+                  </label>
+                  <input
+                    type="number"
+                    min="1930"
+                    max="2030"
+                    placeholder="1996"
+                    value={birthYear}
+                    onChange={(e) => setBirthYear(e.target.value)}
+                    className="w-full px-4 py-2.5 rounded-xl bg-slate-950/80 border border-emerald-500/20 text-white text-xs placeholder-slate-500 focus:outline-none focus:border-emerald-400"
+                  />
+                </div>
+
+                <div className="flex gap-2 pt-2">
+                  <button
+                    type="button"
+                    onClick={() => setActiveStep(2)}
+                    className="py-3 px-4 rounded-2xl text-xs font-semibold glass-pill text-slate-300 hover:text-white"
+                  >
+                    Back
+                  </button>
+                  <button
+                    type="button"
+                    disabled={isAnalyzing}
+                    onClick={startAnalysis}
+                    className="flex-1 py-3.5 rounded-2xl font-bold text-xs bg-gradient-to-r from-emerald-400 via-teal-300 to-amber-200 text-slate-950 hover:brightness-110 flex items-center justify-center gap-2 shadow-xl shadow-emerald-950 disabled:opacity-50"
+                  >
+                    <Sparkles className="w-4 h-4 text-slate-950" />
+                    <span>{isAnalyzing ? "Consulting Feng Shui AI..." : "Harmonize My Space ✨"}</span>
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {errorMsg && (
+              <div className="p-3 rounded-xl bg-rose-950/60 border border-rose-800 text-rose-300 text-xs flex items-center gap-2">
+                <AlertCircle className="w-4 h-4 shrink-0" />
+                <span>{errorMsg}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* 2. 1-Tap Sample Presets (Smooth Horizontal Carousel) */}
+        <div className="space-y-2.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              <span>Instant Sample Rooms</span>
+            </span>
+            <span className="text-[10px] text-slate-500">1-Tap Demo</span>
+          </div>
+
+          <div className="grid grid-cols-3 gap-2">
+            {SAMPLE_ROOMS.map((sample) => (
+              <button
+                key={sample.id}
+                type="button"
+                onClick={() => handlePresetSelect(sample)}
+                className="group text-left glass-pill p-2 rounded-2xl hover:border-emerald-500/40 transition active:scale-95 space-y-1.5"
+              >
+                <div className="relative w-full aspect-[4/3] rounded-xl overflow-hidden border border-emerald-500/10">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={sample.previewUrl}
+                    alt={sample.name}
+                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                  />
+                  <div className="absolute top-1 left-1 px-1.5 py-0.2 rounded bg-slate-950/80 text-[8px] font-mono text-emerald-300">
+                    {sample.score} pts
+                  </div>
+                </div>
+                <div className="text-[10px] font-bold text-white group-hover:text-emerald-300 truncate">
+                  {sample.name.split(" ")[0]} {sample.name.split(" ")[1]}
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* 3. Today's Chi Insight Card */}
+        <div className="glass-panel rounded-3xl p-4 flex items-start gap-3.5 border border-emerald-500/15">
+          <div className="w-10 h-10 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shrink-0 text-emerald-400">
+            <Flame className="w-5 h-5 text-amber-400" />
+          </div>
+          <div className="space-y-0.5">
+            <div className="flex items-center gap-1.5">
+              <span className="text-xs font-bold text-white">
+                Daily Chi Atmosphere
+              </span>
+              <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-emerald-500/20 text-emerald-300 font-mono">
+                Auspicious
+              </span>
+            </div>
+            <p className="text-[11px] text-slate-400 leading-relaxed">
+              Open your morning windows before 11:00 AM to flush out night-stagnant Si Chi and welcome vibrant Yang energy.
+            </p>
+          </div>
+        </div>
+
+        {/* 4. Quick Nav to Standalone Compass */}
+        <button
+          type="button"
+          onClick={() => router.push("/compass")}
+          className="w-full glass-panel hover:bg-emerald-950/30 p-4 rounded-3xl flex items-center justify-between border border-emerald-500/15 active:scale-95 transition"
+        >
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-xl bg-teal-500/10 flex items-center justify-center text-teal-400 border border-teal-500/20">
+              <Compass className="w-5 h-5" />
+            </div>
+            <div className="text-left">
+              <div className="text-xs font-bold text-white">
+                Live Feng Shui Compass Tool
+              </div>
+              <div className="text-[10px] text-slate-400">
+                Measure your doorway heading in real-time
+              </div>
+            </div>
+          </div>
+          <ChevronRight className="w-4 h-4 text-slate-500" />
+        </button>
       </main>
 
-      <Footer />
+      {/* Native Floating Bottom Tab Bar */}
+      <BottomNav />
     </div>
   );
 }

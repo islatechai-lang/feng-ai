@@ -63,48 +63,48 @@ export function PaywallModal({
   const regional = REGIONAL_PRICING[region];
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md overflow-y-auto">
-      <div className="relative w-full max-w-3xl my-8 bg-slate-900 border border-slate-700 rounded-3xl p-6 sm:p-8 shadow-2xl text-slate-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 bg-slate-950/85 backdrop-blur-md overflow-y-auto">
+      <div className="relative w-full max-w-md my-auto glass-panel-elevated border border-emerald-500/25 rounded-3xl p-5 shadow-2xl text-slate-200 space-y-4">
         {/* Close Button */}
         <button
           onClick={onClose}
-          className="absolute top-5 right-5 p-2 rounded-full bg-slate-800 text-slate-400 hover:text-white transition"
+          className="absolute top-4 right-4 p-1.5 rounded-full glass-pill text-slate-400 hover:text-white transition"
           aria-label="Close paywall modal"
         >
-          <X className="w-5 h-5" />
+          <X className="w-4 h-4" />
         </button>
 
         {/* Header */}
-        <div className="text-center space-y-2 mb-6">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-700/60 shadow">
-            <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+        <div className="text-center space-y-1 pt-1">
+          <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-950/80 text-emerald-300 border border-emerald-500/30">
+            <Sparkles className="w-3 h-3 text-amber-400" />
             <span>Harmonize Your Sanctuary</span>
           </div>
 
-          <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            Unlock Full Room Transformation
+          <h3 className="text-xl font-black text-white tracking-tight">
+            Unlock Full Transformation
           </h3>
 
-          <p className="text-xs sm:text-sm text-slate-400 max-w-md mx-auto">
-            Get the unblurred photorealistic room rearrangement, step-by-step 2D floor plan, and complete remedies for all detected issues.
+          <p className="text-[11px] text-slate-300 max-w-xs mx-auto">
+            Get the unblurred photorealistic rearrangement, 2D floor plan & all issue cures.
           </p>
 
           {/* Regional Currency Selector */}
-          <div className="pt-2 flex items-center justify-center gap-2 text-xs">
-            <span className="text-slate-400">Regional Pricing:</span>
-            <div className="flex gap-1 bg-slate-950 p-1 rounded-xl border border-slate-800">
+          <div className="pt-1 flex items-center justify-center gap-1.5 text-[11px]">
+            <span className="text-slate-400">Currency:</span>
+            <div className="flex gap-1 glass-pill p-0.5 rounded-xl">
               {(["US", "PH", "ID", "IN"] as const).map((r) => (
                 <button
                   key={r}
                   type="button"
                   onClick={() => setRegion(r)}
-                  className={`px-2.5 py-1 rounded-lg font-mono font-bold text-xs transition ${
+                  className={`px-2 py-0.5 rounded-lg font-mono font-bold text-[10px] transition ${
                     region === r
-                      ? "bg-emerald-500 text-slate-950"
+                      ? "bg-emerald-500 text-slate-950 shadow"
                       : "text-slate-400 hover:text-white"
                   }`}
                 >
-                  {r === "US" ? "$ USD" : r === "PH" ? "₱ PHP" : r === "ID" ? "Rp IDR" : "₹ INR"}
+                  {r}
                 </button>
               ))}
             </div>
@@ -112,7 +112,7 @@ export function PaywallModal({
         </div>
 
         {/* Plans Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6">
+        <div className="space-y-2.5">
           {PRICING_PLANS.map((plan) => {
             const isSelected = selectedPlan === plan.id;
             let displayPrice = plan.priceLabelUSD;
@@ -127,47 +127,27 @@ export function PaywallModal({
               <div
                 key={plan.id}
                 onClick={() => setSelectedPlan(plan.id)}
-                className={`relative p-5 rounded-2xl border cursor-pointer transition-all flex flex-col justify-between ${
+                className={`relative p-3.5 rounded-2xl border cursor-pointer transition-all ${
                   isSelected
-                    ? "bg-slate-950 border-emerald-500 shadow-xl shadow-emerald-950/80 ring-2 ring-emerald-500"
-                    : "bg-slate-950/60 border-slate-800 hover:border-slate-700"
+                    ? "bg-emerald-950/40 border-emerald-400 ring-1 ring-emerald-400 shadow-lg"
+                    : "glass-pill hover:border-emerald-500/30"
                 }`}
               >
-                {plan.isPopular && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-amber-500 text-slate-950 shadow">
-                    Most Popular
-                  </span>
-                )}
-                {plan.bestValue && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-teal-400 text-slate-950 shadow">
-                    Best Value
-                  </span>
-                )}
-
-                <div>
-                  <h4 className="text-sm font-bold text-white">{plan.name}</h4>
-                  <div className="text-2xl font-black text-white mt-1">
-                    {displayPrice}
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-xs font-bold text-white">{plan.name}</h4>
+                      {plan.isPopular && (
+                        <span className="px-1.5 py-0.2 rounded-full text-[8px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                          Popular
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-base font-black text-white font-mono">
+                      {displayPrice}
+                    </div>
                   </div>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
-                    {plan.billingPeriod === "once"
-                      ? "One-time payment"
-                      : plan.billingPeriod === "week"
-                      ? "Renews weekly • Cancel anytime"
-                      : "Billed annually"}
-                  </p>
 
-                  <ul className="space-y-2 mt-4 text-[11px] text-slate-300">
-                    {plan.features.slice(0, 4).map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-1.5">
-                        <Check className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-
-                <div className="pt-4 mt-auto">
                   <button
                     type="button"
                     onClick={(e) => {
@@ -175,13 +155,13 @@ export function PaywallModal({
                       handleCheckout(plan.id);
                     }}
                     disabled={isLoading}
-                    className={`w-full py-2.5 rounded-xl text-xs font-bold transition ${
+                    className={`py-1.5 px-3 rounded-xl text-xs font-bold transition active:scale-95 ${
                       isSelected
-                        ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400"
-                        : "bg-slate-800 text-white hover:bg-slate-700"
+                        ? "bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow"
+                        : "bg-slate-800 text-white"
                     }`}
                   >
-                    {isLoading && selectedPlan === plan.id ? "Processing..." : `Select ${plan.name}`}
+                    {isLoading && selectedPlan === plan.id ? "..." : "Unlock"}
                   </button>
                 </div>
               </div>

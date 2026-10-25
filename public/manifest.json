@@ -4,14 +4,14 @@
   "description": "Classical Feng Shui Room Analyzer & Spatial Chi Optimizer",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#020617",
+  "background_color": "#020f0d",
   "theme_color": "#10b981",
   "orientation": "portrait",
   "icons": [
     {
-      "src": "/icon.svg",
-      "sizes": "any",
-      "type": "image/svg+xml",
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
       "purpose": "any maskable"
     }
   ]

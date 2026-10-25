@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { Navbar } from "@/components/Navbar";
-import { Footer } from "@/components/Footer";
+import { TopHeader } from "@/components/TopHeader";
+import { BottomNav } from "@/components/BottomNav";
 import { BeforeAfterSlider } from "@/components/BeforeAfterSlider";
 import { Sparkles, ArrowRight, CheckCircle2, AlertTriangle, Compass } from "lucide-react";
 
@@ -118,29 +118,29 @@ export default async function SeoGuidePage({
   }
 
   return (
-    <div className="min-h-screen flex flex-col bg-slate-950 text-slate-100">
-      <Navbar />
+    <div className="min-h-screen flex flex-col bg-[#020e0c] text-slate-100 pb-28 selection:bg-emerald-500 selection:text-slate-950">
+      <TopHeader />
 
-      <main className="flex-1 max-w-4xl w-full mx-auto px-4 sm:px-6 py-12 space-y-10">
+      <main className="flex-1 max-w-md w-full mx-auto px-4 pt-4 space-y-6">
         {/* Header */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-emerald-400">
-            <Compass className="w-4 h-4" />
-            <span>Classical Feng Shui Guide</span>
+        <div className="space-y-1.5">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-widest text-emerald-400">
+            <Compass className="w-3.5 h-3.5" />
+            <span>Classical Feng Shui</span>
           </div>
-          <h1 className="text-3xl sm:text-5xl font-black text-white tracking-tight leading-tight">
+          <h1 className="text-xl sm:text-2xl font-black text-white tracking-tight leading-snug">
             {guide.title}
           </h1>
-          <p className="text-base sm:text-lg text-slate-300 leading-relaxed">
+          <p className="text-xs text-slate-300 leading-relaxed">
             {guide.subtitle}
           </p>
         </div>
 
         {/* Example Before/After Transformation Slider */}
-        <div className="bg-slate-900/60 p-6 rounded-3xl border border-slate-800 space-y-4">
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-emerald-400" />
-            <span>Real Layout Transformation Case Study</span>
+        <div className="glass-panel p-4 rounded-3xl border border-emerald-500/15 space-y-3">
+          <h2 className="text-xs font-bold text-white uppercase tracking-wider flex items-center gap-1.5">
+            <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Interactive Layout Case</span>
           </h2>
           <BeforeAfterSlider
             originalUrl={guide.heroImg}
@@ -149,28 +149,28 @@ export default async function SeoGuidePage({
         </div>
 
         {/* Key Classical Rule */}
-        <div className="p-6 rounded-3xl bg-emerald-950/40 border border-emerald-600/40 space-y-2">
-          <div className="text-xs font-bold uppercase tracking-wider text-emerald-400">
-            The Fundamental Principle
+        <div className="p-4 rounded-3xl bg-emerald-950/40 border border-emerald-500/25 space-y-1.5">
+          <div className="text-[10px] font-bold uppercase tracking-wider text-emerald-400">
+            Core Feng Shui Rule
           </div>
-          <p className="text-sm sm:text-base font-semibold text-white leading-relaxed">
+          <p className="text-xs font-semibold text-white leading-relaxed">
             {guide.keyRule}
           </p>
         </div>
 
         {/* Common Mistakes */}
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5 text-rose-400" />
-            <span>Critical Feng Shui Mistakes to Avoid</span>
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+            <AlertTriangle className="w-4 h-4 text-rose-400" />
+            <span>Mistakes to Avoid</span>
           </h3>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <div className="space-y-2">
             {guide.commonMistakes.map((mistake, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800 text-xs text-slate-300 leading-relaxed flex items-start gap-2.5"
+                className="p-3 rounded-2xl glass-pill text-xs text-slate-300 leading-relaxed flex items-start gap-2"
               >
-                <span className="w-5 h-5 rounded-full bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center shrink-0 text-[10px] font-bold">
+                <span className="w-4 h-4 rounded-full bg-rose-950 text-rose-400 border border-rose-800 flex items-center justify-center shrink-0 text-[9px] font-bold mt-0.5">
                   !
                 </span>
                 <span>{mistake}</span>
@@ -180,58 +180,45 @@ export default async function SeoGuidePage({
         </div>
 
         {/* Actionable Remedies */}
-        <div className="space-y-4">
-          <h3 className="text-xl font-bold text-white flex items-center gap-2">
-            <CheckCircle2 className="w-5 h-5 text-emerald-400" />
-            <span>Actionable Layout Remedies</span>
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
+            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <span>Remedies & Fixes</span>
           </h3>
-          <div className="space-y-2.5">
+          <div className="space-y-2">
             {guide.remedies.map((remedy, idx) => (
               <div
                 key={idx}
-                className="p-4 rounded-2xl bg-slate-900/40 border border-slate-800/80 text-xs text-slate-200 flex items-start gap-3"
+                className="p-3 rounded-2xl glass-panel text-xs text-slate-200 flex items-start gap-2 border border-emerald-500/15"
               >
-                <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0 mt-0.5" />
                 <span>{remedy}</span>
               </div>
             ))}
           </div>
         </div>
 
-        {/* FAQ */}
-        <div className="space-y-4 pt-4 border-t border-slate-800">
-          <h3 className="text-xl font-bold text-white">Frequently Asked Questions</h3>
-          <div className="space-y-3">
-            {guide.faq.map((item, idx) => (
-              <div key={idx} className="p-5 rounded-2xl bg-slate-900/60 border border-slate-800 space-y-1.5">
-                <h4 className="text-xs font-bold text-white">{item.q}</h4>
-                <p className="text-xs text-slate-400 leading-relaxed">{item.a}</p>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* CTA to analyze user's own room */}
-        <div className="p-8 rounded-3xl bg-gradient-to-r from-emerald-950/60 via-slate-900 to-slate-950 border border-emerald-500/40 text-center space-y-4 shadow-2xl">
-          <h3 className="text-2xl font-black text-white">
-            See Your Own Room Layout Analyzed
+        {/* CTA to scan user's room */}
+        <div className="p-5 rounded-3xl glass-panel-elevated border border-emerald-500/30 text-center space-y-3 shadow-2xl">
+          <h3 className="text-base font-black text-white">
+            Analyze Your Own Space
           </h3>
-          <p className="text-xs text-slate-300 max-w-md mx-auto">
-            Take a photo of your space now to receive your instant 0-100 Feng Shui score and AI layout rearrangement.
+          <p className="text-xs text-slate-300">
+            Snap your room to get an instant 0-100 score and AI layout edit.
           </p>
           <div>
             <Link
-              href="/analyze"
-              className="inline-flex items-center gap-2 px-6 py-3.5 rounded-2xl text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-xl transition"
+              href="/"
+              className="inline-flex items-center gap-1.5 px-5 py-2.5 rounded-full text-xs font-bold bg-emerald-500 text-slate-950 hover:bg-emerald-400 shadow-lg transition"
             >
-              <Sparkles className="w-4 h-4" />
-              <span>Analyze My Room Free</span>
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Scan My Room Now</span>
             </Link>
           </div>
         </div>
       </main>
 
-      <Footer />
+      <BottomNav />
     </div>
   );
 }

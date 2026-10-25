@@ -83,9 +83,12 @@ export function ShareCardModal({
           {/* Top Branding */}
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-1.5">
-              <div className="w-6 h-6 rounded-lg bg-emerald-500 flex items-center justify-center text-slate-950 font-serif font-black text-xs">
-                風
-              </div>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/logo.png"
+                alt="FengShui AI"
+                className="w-6 h-6 rounded-lg object-cover shadow"
+              />
               <span className="text-xs font-bold text-white">FengShui AI</span>
             </div>
             <span className="text-[10px] font-mono uppercase text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">

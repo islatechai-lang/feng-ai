@@ -18,8 +18,8 @@ export const metadata: Metadata = {
     "Upload your room photo, align your door compass direction, and receive your Feng Shui score, #1 issue fix, and an AI-rearranged layout in true Command Position.",
   manifest: "/manifest.json",
   icons: {
-    icon: "/icon.svg",
-    apple: "/icon.svg",
+    icon: "/icon.png",
+    apple: "/icon.png",
   },
   appleWebApp: {
     capable: true,
@@ -29,10 +29,12 @@ export const metadata: Metadata = {
 };
 
 export const viewport: Viewport = {
-  themeColor: "#020617",
+  themeColor: "#020f0d",
   width: "device-width",
   initialScale: 1,
   maximumScale: 1,
+  viewportFit: "cover",
+  userScalable: false,
 };
 
 export default function RootLayout({
@@ -45,7 +47,7 @@ export default function RootLayout({
       lang="en"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased dark`}
     >
-      <body className="min-h-full flex flex-col bg-slate-950 text-slate-100 selection:bg-emerald-500 selection:text-slate-950 font-sans">
+      <body className="min-h-full flex flex-col bg-[#020e0c] text-slate-100 selection:bg-emerald-500 selection:text-slate-950 font-sans">
         {children}
       </body>
     </html>
